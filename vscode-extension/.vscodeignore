@@ -9,6 +9,5 @@ out/**/*.map
 .github/**
 *.vsix
 README.md
-LICENSE
 package-lock.json
 
