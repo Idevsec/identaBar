@@ -68,6 +68,8 @@ jobs:
     needs: [build-vscode, build-browser]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
