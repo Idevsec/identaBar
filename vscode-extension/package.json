@@ -1,0 +1,105 @@
+{
+  "name": "identabar-vscode",
+  "displayName": "IdentaBar VS Code Client",
+  "description": "Cryptographic AI Agent identity verifier and attestation gatekeeper using the Creduent protocol.",
+  "version": "1.0.0",
+  "publisher": "idevsec",
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/idevsec/IdentaBar.git"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Linters"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "identabar.verifyWorkspace",
+        "title": "IdentaBar: Verify Workspace Agents",
+        "category": "IdentaBar"
+      },
+      {
+        "command": "identabar.clearCache",
+        "title": "IdentaBar: Clear Attestation Cache",
+        "category": "IdentaBar"
+      },
+      {
+        "command": "identabar.createAgentIdentity",
+        "title": "IdentaBar: Initialize Agent Identity",
+        "category": "IdentaBar"
+      },
+      {
+        "command": "identabar.signFile",
+        "title": "IdentaBar: Sign File with Agent Key",
+        "category": "IdentaBar"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "identabar.signFile",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "IdentaBar Configuration",
+      "properties": {
+        "identabar.registryUrl": {
+          "type": "string",
+          "default": "https://registry.idevsec.com",
+          "description": "The URL of the IDevSec Creduent Registry."
+        },
+        "identabar.enableAutomaticScanning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scan the workspace for agent.json files on startup."
+        },
+        "identabar.attestationStrictness": {
+          "type": "string",
+          "enum": [
+            "strict",
+            "standard",
+            "lax"
+          ],
+          "default": "standard",
+          "description": "strict: Block unsigned agent actions; standard: Warn on missing/expired credentials; lax: Logging only."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "identabar-explorer",
+          "title": "IdentaBar Explorer",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "identabar-explorer": [
+        {
+          "id": "identabar.agentsView",
+          "name": "Workspace Agents"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "@types/vscode": "^1.74.0",
+    "typescript": "^4.9.4"
+  }
+}

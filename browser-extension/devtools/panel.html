@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creduent DevTools Panel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #533afd;
+      --primary-hover: #4434d4;
+      --brand-dark-900: #1c1e54;
+      --ink: #0d253d;
+      --ink-secondary: #273951;
+      --ink-mute: #64748d;
+      --ink-mute-2: #61718a;
+      --on-primary: #ffffff;
+      --hairline: rgba(227, 232, 238, 0.15);
+      --ruby: #ea2261;
+      --success: #22c55e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--ink);
+      color: var(--on-primary);
+      font-family: "Inter", -apple-system, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 20px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--hairline);
+      margin-bottom: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .brand-text {
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: -0.3px;
+    }
+
+    .active-domain {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--ink-mute);
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    /* Grid Layout */
+    .grid {
+      display: grid;
+      grid-template-columns: 4fr 6fr;
+      gap: 20px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* Panels */
+    .sidebar, .main {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .card {
+      background-color: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--hairline);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    /* Selector styles */
+    .select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .agent-dropdown {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background-color: var(--brand-dark-900);
+      color: var(--on-primary);
+      border: 1px solid var(--hairline);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Detail lists */
+    .detail-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .detail-label {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      color: var(--ink-mute);
+      letter-spacing: 0.5px;
+    }
+
+    .detail-value {
+      font-weight: 300;
+      color: #cbd5e1;
+    }
+
+    .detail-value.monospace {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      background-color: var(--brand-dark-900);
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--hairline);
+      color: #94a3b8;
+      word-break: break-all;
+    }
+
+    /* Badge indicators */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 500;
+      width: fit-content;
+    }
+
+    .status-badge.trusted { background: rgba(245, 233, 212, 0.08); color: #e2b070; border: 1px solid rgba(245, 233, 212, 0.2); }
+    .status-badge.verified { background: rgba(83, 58, 253, 0.08); color: #818cf8; border: 1px solid rgba(83, 58, 253, 0.2); }
+    .status-badge.unverified { background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid var(--hairline); }
+    .status-badge.revoked { background: rgba(234, 34, 97, 0.08); color: var(--ruby); border: 1px solid rgba(234, 34, 97, 0.2); }
+    .status-badge.expired { background: rgba(245, 158, 11, 0.08); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+
+    /* Playground Tabs */
+    .tabs-container {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .tab-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--hairline);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--ink-mute);
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--on-primary);
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .tab-btn.active {
+      color: var(--on-primary);
+      background-color: var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* JSON display */
+    .json-pre {
+      background-color: #0f172a;
+      border: 1px solid var(--hairline);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      overflow: auto;
+      flex: 1;
+      color: #38bdf8;
+    }
+
+     /* Verify Form */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-field, .textarea-field {
+      width: 100%;
+      background-color: var(--brand-dark-900);
+      border: 1px solid var(--hairline);
+      border-radius: 6px;
+      color: white;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 8px 12px;
+      outline: none;
+    }
+
+    .textarea-field {
+      height: 80px;
+      resize: none;
+    }
+
+    .input-field:focus, .textarea-field:focus {
+      border-color: var(--primary);
+    }
+
+    .btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+
+    .btn-copy-json {
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      border: 1px solid var(--hairline);
+      background: transparent;
+      color: var(--ink-mute);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .btn-copy-json:hover {
+      color: var(--on-primary);
+      border-color: rgba(255, 255, 255, 0.4);
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    #btn-clear-console:hover {
+      color: var(--on-primary) !important;
+    }
+
+    /* Soft pill tag from DESIGN.md */
+    .pill-tag-soft {
+      font-size: 10px;
+      font-weight: 400;
+      background-color: rgba(83, 58, 253, 0.08);
+      color: #818cf8;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      border: 1px solid rgba(83, 58, 253, 0.2);
+      text-transform: lowercase;
+      font-feature-settings: "ss01" on;
+      display: inline-block;
+    }
+
+    /* Diagnostic log card */
+    .diagnostic-logs {
+      background-color: #0c1020;
+      border: 1px solid var(--hairline);
+      border-radius: 6px;
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #94a3b8;
+      height: 110px;
+      overflow-y: auto;
+    }
+
+    .no-agent-banner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      text-align: center;
+      color: var(--ink-mute);
+    }
+
+    .no-agent-banner svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+    }
+
+    /* Responsive Styling for Docked Panels */
+    @media (max-width: 768px) {
+      body {
+        padding: 12px;
+        height: auto;
+        overflow-y: auto;
+      }
+      
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+      
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        min-height: auto;
+      }
+      
+      .json-pre {
+        min-height: 250px;
+        max-height: 400px;
+      }
+    }
+
+    /* Branding Footer */
+    .footer {
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 1px solid var(--hairline);
+      display: flex;
+      justify-content: center;
+    }
+
+    .footer-link {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--ink-mute);
+      text-decoration: none;
+      letter-spacing: -0.3px;
+      transition: color 0.15s ease, text-shadow 0.15s ease;
+    }
+
+    .footer-link:hover {
+      color: #818cf8;
+      text-shadow: 0 0 8px rgba(83, 58, 253, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <!-- Panel Header -->
+  <header class="header">
+    <div class="brand">
+      <img class="brand-icon" src="/assets/icons/icon.svg" alt="IdentaBar Logo">
+      <span class="brand-text">IdentaBar DevTools Console</span>
+    </div>
+    <div id="domain-display" class="active-domain">unknown-domain.com</div>
+  </header>
+
+  <!-- Panel Body -->
+  <div class="grid" id="main-grid" style="display: none;">
+    <!-- Left column sidebar -->
+    <div class="sidebar">
+      <!-- Selector card -->
+      <div class="card" id="sidebar-selector-container" style="display: none;">
+        <span class="card-title">Select Active Profile</span>
+        <div class="select-wrapper">
+          <select id="sidebar-agent-selector" class="agent-dropdown">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+      </div>
+
+      <!-- Attestation details card -->
+      <div class="card">
+        <span class="card-title">Identity Registry Details</span>
+        
+        <div class="detail-row">
+          <span class="detail-label">Status</span>
+          <div id="agent-status" class="status-badge verified">VERIFIED</div>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">Agent ID</span>
+          <div id="agent-id" class="detail-value monospace">agent://...</div>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">Owner</span>
+          <div id="agent-owner" class="detail-value">-</div>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">Capabilities</span>
+          <div id="agent-caps" class="detail-value" style="display: flex; flex-wrap: wrap; gap: 4px;">-</div>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">Public Key</span>
+          <div id="agent-pubkey" class="detail-value monospace">ed25519:...</div>
+        </div>
+
+        <div class="detail-row">
+          <span class="detail-label">Local Verify Status</span>
+          <div id="crypto-check" style="font-weight: 500; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--success);">✓ Cryptographically Valid</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column playground -->
+    <div class="main">
+      <div class="card tabs-container">
+        <!-- Tabs bar -->
+        <div class="tab-bar">
+          <div style="display: flex; gap: 8px;">
+            <button class="tab-btn active" id="tab-json-btn">Raw Attestation JSON</button>
+            <button class="tab-btn" id="tab-verify-btn">Verify Playground</button>
+          </div>
+          <button class="btn-copy-json" id="btn-copy-json">Copy JSON</button>
+        </div>
+
+        <!-- Tab 1: JSON viewer -->
+        <div class="tab-content active" id="tab-json">
+          <pre class="json-pre" id="json-view">{ "loading": true }</pre>
+        </div>
+
+        <!-- Tab 2: Verify playground -->
+        <div class="tab-content" id="tab-verify">
+          <div class="form-group">
+            <span class="detail-label">Verification Message (Canonical/Standard)</span>
+            <textarea id="verify-msg" class="textarea-field" placeholder="Enter message text..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <span class="detail-label">Ed25519 Signature (Base64)</span>
+            <input type="text" id="verify-sig" class="input-field" placeholder="Enter Base64 signature...">
+          </div>
+
+          <button id="verify-run-btn" class="btn" style="width: fit-content; margin-top: 4px;">Verify Signature</button>
+
+          <div class="form-group" style="margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <span class="detail-label">Verify Output Console</span>
+              <button id="btn-clear-console" style="background: none; border: none; color: var(--ink-mute); font-family: 'JetBrains Mono', monospace; font-size: 10px; cursor: pointer; text-decoration: underline; transition: color 0.15s ease;">
+                Clear
+              </button>
+            </div>
+            <div id="verify-console" class="diagnostic-logs">Console Idle - ready to verify signature.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unverified/No Agent Banner -->
+  <div class="no-agent-banner" id="no-agent-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="8" x2="12" y2="12"></line>
+      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+    </svg>
+    <h2>No Creduent Identity Resolved</h2>
+    <p style="margin-top: 6px; font-size: 13px; max-width: 320px;">The active website tab does not present any registered agent attestation in its meta tags, directory roots, or registry query logs.</p>
+  </div>
+
+  <!-- Branding Footer -->
+  <footer class="footer">
+    <a href="https://idevsec.com" target="_blank" class="footer-link">Verified by IDevSec Registry</a>
+  </footer>
+
+  <script src="../lib/browser-compat.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>

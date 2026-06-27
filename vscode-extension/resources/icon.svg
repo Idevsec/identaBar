@@ -1,0 +1,31 @@
+<svg width="100%" viewBox="145 120 400 400" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>IdentaBar VS Code Activity Icon</title>
+  
+  <!-- Outer Shield Outline -->
+  <path d="M345,148 L473,196 L473,342 Q473,432 345,492 Q217,432 217,342 L217,196 Z" fill="none" stroke="currentColor" stroke-width="20" stroke-linejoin="round" />
+
+  <!-- Inner Shield Detail -->
+  <path d="M345,172 L453,212 L453,340 Q453,418 345,470 Q237,418 237,340 L237,212 Z" fill="none" stroke="currentColor" stroke-width="8" stroke-linejoin="round" opacity="0.5" />
+
+  <!-- Target Side Beams -->
+  <line x1="237" y1="296" x2="301" y2="296" stroke="currentColor" stroke-width="12" stroke-linecap="round" opacity="0.6" />
+  <line x1="389" y1="296" x2="453" y2="296" stroke="currentColor" stroke-width="12" stroke-linecap="round" opacity="0.6" />
+
+  <!-- Key Loop -->
+  <circle cx="345" cy="268" r="44" fill="none" stroke="currentColor" stroke-width="20" />
+  <circle cx="345" cy="268" r="28" fill="none" stroke="currentColor" stroke-width="8" opacity="0.5" />
+  
+  
+  
+  <!-- Key Teeth -->
+  <polyline points="345,365 372,365 372,381" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+  <polyline points="345,395 364,395 364,411" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Attestation Anchors (Trust Nodes) -->
+  <circle cx="345" cy="148" r="15" fill="currentColor" />
+  <circle cx="473" cy="196" r="12" fill="currentColor" />
+  <circle cx="217" cy="196" r="12" fill="currentColor" />
+  <circle cx="473" cy="342" r="12" fill="currentColor" />
+  <circle cx="217" cy="342" r="12" fill="currentColor" />
+  <circle cx="345" cy="492" r="15" fill="currentColor" />
+</svg>

@@ -1,0 +1,14 @@
+.vscode/**
+.vscodeignore
+.gitignore
+tsconfig.json
+src/**
+node_modules/**
+out/**/*.map
+.git/**
+.github/**
+*.vsix
+README.md
+LICENSE
+package-lock.json
+

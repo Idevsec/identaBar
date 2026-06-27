@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IdentaBar</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="domain-info">
+        <img class="brand-icon" src="/assets/icons/icon.svg" alt="IdentaBar Logo">
+        <span id="domain-name" class="domain-text">Detecting...</span>
+      </div>
+    </header>
+
+    <!-- Main Content State -->
+    <main class="main-content">
+      <!-- Loading State -->
+      <div id="state-loading" class="state-panel active" style="align-items: stretch; gap: var(--spacing-md);">
+        <div class="skeleton-badge-card"></div>
+        <div class="skeleton-details">
+          <div class="skeleton-line" style="width: 30%;"></div>
+          <div class="skeleton-line" style="width: 85%;"></div>
+          <div class="skeleton-line" style="width: 55%;"></div>
+          <div class="skeleton-line" style="width: 95%;"></div>
+        </div>
+      </div>
+
+      <!-- No Agent Detected State -->
+      <div id="state-none" class="state-panel">
+        <div class="none-icon-wrapper">
+          <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h2 class="state-title">No Agent Attestation</h2>
+        <p class="state-description">This website does not present a verified Creduent identity signature in its meta headers or directory roots.</p>
+      </div>
+
+      <!-- Verified/Trusted Agent State -->
+      <div id="state-agent" class="state-panel">
+        <!-- Status Card -->
+        <div class="status-card" id="status-container">
+          <div class="status-badge" id="status-badge">
+            <span class="status-dot"></span>
+            <span id="status-text">TRUSTED</span>
+          </div>
+        </div>
+
+        <!-- Selector for multiple agents -->
+        <div id="selector-container" class="selector-card" style="display: none;">
+          <label class="detail-label">Active Agent Profiles</label>
+          <div class="select-wrapper">
+            <select id="agent-selector" class="agent-dropdown">
+              <!-- Dynamically populated options -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="details-section">
+          <div class="detail-row">
+            <label class="detail-label">Agent ID</label>
+            <div class="detail-value" id="agent-id">agent://c2s/auditor</div>
+          </div>
+
+          <div class="detail-row">
+            <div class="label-header">
+              <label class="detail-label">Public Key</label>
+              <button class="copy-btn" id="copy-key-btn" title="Copy Public Key">
+                <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="detail-value monospace" id="public-key">ed25519:3vvH...</div>
+          </div>
+
+          <div class="detail-row">
+            <label class="detail-label">Capabilities</label>
+            <div class="tags-container" id="capabilities-tags">
+              <!-- Dynamically populated tags -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Handshake Simulation Card -->
+        <div id="ping-card" class="selector-card" style="display: none; margin-top: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span class="detail-label">Handshake Status</span>
+            <span id="ping-status" style="font-size: 11px; font-weight: 500; color: var(--ink-mute);">IDLE</span>
+          </div>
+          <div id="ping-details" class="detail-value monospace" style="white-space: pre-wrap; margin-top: 6px; font-size: 11px; padding: var(--spacing-sm); display: none; line-height: 1.4; background-color: var(--brand-dark-900); border-radius: var(--rounded-xs); border: 1px solid rgba(227, 232, 238, 0.15);">
+            <!-- Response details -->
+          </div>
+        </div>
+
+        <!-- Action Piles -->
+        <div class="actions-section">
+          <a href="#" target="_blank" class="btn btn-primary" id="btn-registry">View Registry</a>
+          <button class="btn btn-secondary" id="btn-ping">Test Handshake</button>
+          <a href="#" target="_blank" class="btn btn-secondary" id="btn-schema" style="display: none;">View Schema</a>
+        </div>
+      </div>
+    </main>
+    <!-- Branding Footer -->
+    <footer class="footer">
+      <a href="https://idevsec.com" target="_blank" class="footer-link">Verified by IDevSec Registry</a>
+    </footer>
+  </div>
+  <script src="../lib/browser-compat.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

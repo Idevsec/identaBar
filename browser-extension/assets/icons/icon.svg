@@ -1,0 +1,93 @@
+<svg width="100%" height="100%" viewBox="145 120 400 400" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>IdentaBar Security Key Icon</title>
+  <desc>A professional, premium cryptographic shield and key icon for the IdentaBar extension suite.</desc>
+  <defs>
+    <!-- Radial background gradient -->
+    <radialGradient id="bg-glow" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#18233c" />
+      <stop offset="60%" stop-color="#0a0f18" />
+      <stop offset="100%" stop-color="#05080c" />
+    </radialGradient>
+
+    <!-- Metallic Gold Gradient -->
+    <linearGradient id="gold-metallic" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd866" />
+      <stop offset="30%" stop-color="#f3c246" />
+      <stop offset="70%" stop-color="#c9a84c" />
+      <stop offset="100%" stop-color="#9a7b2c" />
+    </linearGradient>
+
+    <!-- Cyan to Blue Gradient -->
+    <linearGradient id="cyan-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff" />
+      <stop offset="50%" stop-color="#00a8ff" />
+      <stop offset="100%" stop-color="#0055ff" />
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="glow-heavy" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="glow-light" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+
+
+
+
+  <!-- Shield Shape Backing Glass -->
+  <path d="M345,148 L473,196 L473,342 Q473,432 345,492 Q217,432 217,342 L217,196 Z" fill="#0d1627" fill-opacity="0.8" />
+  
+  <!-- Glowing Cyan Shadow/Glow Path of the Shield -->
+  <path d="M345,148 L473,196 L473,342 Q473,432 345,492 Q217,432 217,342 L217,196 Z" fill="none" stroke="url(#cyan-blue)" stroke-width="6" opacity="0.3" filter="url(#glow-heavy)" />
+  
+  <!-- Outer Shield Outline (Gold Metallic) -->
+  <path d="M345,148 L473,196 L473,342 Q473,432 345,492 Q217,432 217,342 L217,196 Z" fill="none" stroke="url(#gold-metallic)" stroke-width="3" stroke-linejoin="round" />
+
+  <!-- Inner Shield Detail (Glowing Indigo/Blue) -->
+  <path d="M345,172 L453,212 L453,340 Q453,418 345,470 Q237,418 237,340 L237,212 Z" fill="none" stroke="url(#cyan-blue)" stroke-width="1.5" stroke-linejoin="round" opacity="0.4" />
+
+  <!-- Target Side Beams -->
+  <line x1="237" y1="296" x2="301" y2="296" stroke="url(#cyan-blue)" stroke-width="2" stroke-linecap="round" opacity="0.6" />
+  <line x1="389" y1="296" x2="453" y2="296" stroke="url(#cyan-blue)" stroke-width="2" stroke-linecap="round" opacity="0.6" />
+
+  <!-- Center Key Loop & Symbol (Gold Metallic with a Cyan center element) -->
+  <g filter="url(#glow-light)">
+    <!-- Key Loop -->
+    <circle cx="345" cy="268" r="44" fill="none" stroke="url(#gold-metallic)" stroke-width="5.5" />
+    <circle cx="345" cy="268" r="28" fill="#141d30" stroke="url(#cyan-blue)" stroke-width="1.5" opacity="0.7" />
+    
+    
+    
+    <!-- Key Teeth -->
+    <polyline points="345,365 372,365 372,381" fill="none" stroke="url(#gold-metallic)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+    <polyline points="345,395 364,395 364,411" fill="none" stroke="url(#gold-metallic)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+
+
+  <!-- Glowing Attestation Anchors (Trust Nodes) -->
+  <!-- Gold Top Anchor -->
+  <circle cx="345" cy="148" r="6" fill="url(#gold-metallic)" filter="url(#glow-light)" />
+  <!-- Cyan Top-Right Anchor -->
+  <circle cx="473" cy="196" r="5" fill="#00f0ff" filter="url(#glow-light)" />
+  <!-- Cyan Top-Left Anchor -->
+  <circle cx="217" cy="196" r="5" fill="#00f0ff" filter="url(#glow-light)" />
+  <!-- Cyan Mid-Right Anchor -->
+  <circle cx="473" cy="342" r="5" fill="#00f0ff" filter="url(#glow-light)" />
+  <!-- Cyan Mid-Left Anchor -->
+  <circle cx="217" cy="342" r="5" fill="#00f0ff" filter="url(#glow-light)" />
+  <!-- Gold Bottom Anchor -->
+  <circle cx="345" cy="492" r="6" fill="url(#gold-metallic)" filter="url(#glow-light)" />
+</svg>

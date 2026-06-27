@@ -1,0 +1,88 @@
+name: Package and Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+jobs:
+  build-vscode:
+    name: Package VS Code Extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: |
+          cd vscode-extension
+          npm ci
+
+      - name: Compile Extension
+        run: |
+          cd vscode-extension
+          npm run compile
+
+      - name: Package VSIX
+        run: |
+          cd vscode-extension
+          npx @vscode/vsce package -o ../identabar-vscode.vsix
+
+      - name: Upload VSIX Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: identabar-vscode-extension
+          path: identabar-vscode.vsix
+
+  build-browser:
+    name: Package Browser Extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Create Browser ZIP
+        run: |
+          cd browser-extension
+          zip -r ../identabar-browser-extension.zip . -x "*.git*" "*.github*"
+
+      - name: Upload Browser Extension Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: identabar-browser-extension
+          path: identabar-browser-extension.zip
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-vscode, build-browser]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Download VS Code Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: identabar-vscode-extension
+
+      - name: Download Browser Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: identabar-browser-extension
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            identabar-vscode.vsix
+            identabar-browser-extension.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
