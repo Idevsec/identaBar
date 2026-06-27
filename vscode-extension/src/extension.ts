@@ -36,6 +36,14 @@ export function activate(context: vscode.ExtensionContext) {
       
       if (strictness === 'strict') {
         const cachedResults = Array.from(attestationCache.values());
+        if (cachedResults.length === 0) {
+          vscode.window.showErrorMessage(
+            `[IdentaBar Gating Block] Task "${event.execution.task.name}" execution blocked. Workspace agents have not been verified yet. Run verification first.`,
+            'OK'
+          );
+          event.execution.terminate();
+          return;
+        }
         const hasUnverified = cachedResults.some(a => a.status === 'unverified' || a.status === 'revoked');
         
         if (hasUnverified) {
@@ -260,18 +268,41 @@ function cacheAndReturn(agentId: string, result: any): any {
 }
 
 /**
+ * JCS Canonicalization Scheme (RFC 8785)
+ */
+function canonicalize(val: any): string {
+  if (val === null) return 'null';
+  if (typeof val !== 'object') {
+    return JSON.stringify(val);
+  }
+  if (Array.isArray(val)) {
+    return '[' + val.map(canonicalize).join(',') + ']';
+  }
+  const keys = Object.keys(val).sort();
+  const parts = keys.map(k => {
+    return JSON.stringify(k) + ':' + canonicalize(val[k]);
+  });
+  return '{' + parts.join(',') + '}';
+}
+
+/**
  * Handles HTTP GET query.
  */
 function fetchHttp(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    https.get(url, (res: any) => {
+    const req = https.get(url, (res: any) => {
       if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
         return reject(new Error(`Server returned status code ${res.statusCode}`));
       }
       let body = '';
       res.on('data', (chunk: any) => body += chunk);
       res.on('end', () => resolve(body));
-    }).on('error', (err: any) => reject(err));
+    });
+    req.on('error', (err: any) => reject(err));
+    req.setTimeout(5000, () => {
+      req.destroy();
+      reject(new Error('Request timed out after 5000ms'));
+    });
   });
 }
 
@@ -280,17 +311,15 @@ function fetchHttp(url: string): Promise<string> {
  */
 function verifyEd25519Signature(data: any, signatureB64: string, publicKeyPem: string): boolean {
   try {
-    // Canonicalize data (Simple JCS simulation for comparison)
     const dataToVerify = { ...data };
     delete dataToVerify.signature;
-    const message = JSON.stringify(dataToVerify);
+    delete dataToVerify.status;
+    delete dataToVerify.expired;
 
-    const verifier = crypto.createVerify('sha256');
-    verifier.update(message);
-    verifier.end();
-
+    const message = canonicalize(dataToVerify);
     const signatureBuffer = Buffer.from(signatureB64, 'base64');
-    return verifier.verify(publicKeyPem, signatureBuffer);
+    
+    return crypto.verify(null, Buffer.from(message), publicKeyPem, signatureBuffer);
   } catch (err) {
     outputChannel.appendLine(`[Crypto Error] Signature verification process failed: ${err}`);
     return false;
@@ -478,7 +507,7 @@ async function createAgentIdentity() {
     };
 
     // Sign the canonical payload
-    const message = JSON.stringify(agentObj);
+    const message = canonicalize(agentObj);
     const signature = crypto.sign(null, Buffer.from(message), privateKey);
     const finalAgentJson = {
       ...agentObj,
@@ -496,18 +525,19 @@ async function createAgentIdentity() {
     const privateKeyPath = path.join(creduentDir, 'private.pem');
 
     fs.writeFileSync(agentJsonPath, JSON.stringify(finalAgentJson, null, 2), 'utf8');
-    fs.writeFileSync(privateKeyPath, privateKey, 'utf8');
+    fs.writeFileSync(privateKeyPath, privateKey, { encoding: 'utf8', mode: 0o600 });
 
     // Prompt user about gitignore safety
     const gitignorePath = path.join(rootPath, '.gitignore');
     let gitignoreUpdated = false;
+    let gitignoreContent = '';
     if (fs.existsSync(gitignorePath)) {
-      let gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
-      if (!gitignoreContent.includes('.creduent/private.pem')) {
-        gitignoreContent += '\n# IdentaBar private keys\n.creduent/private.pem\n';
-        fs.writeFileSync(gitignorePath, gitignoreContent, 'utf8');
-        gitignoreUpdated = true;
-      }
+      gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
+    }
+    if (!gitignoreContent.includes('.creduent/private.pem')) {
+      gitignoreContent += '\n# IdentaBar private keys\n.creduent/private.pem\n';
+      fs.writeFileSync(gitignorePath, gitignoreContent, 'utf8');
+      gitignoreUpdated = true;
     }
 
     vscode.window.showInformationMessage(

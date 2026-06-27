@@ -47,6 +47,18 @@ Both clients follow the same zero-dependency cryptographic flow:
 
 ---
 
+## Security & Robustness Guarantees
+
+IdentaBar clients implement strict safety and cryptographic validation measures:
+
+- **Correct Ed25519 Checking:** Employs raw Node.js `crypto.verify` (and Web Crypto API in browser engines) instead of hash-based streams to directly check Ed25519/EdDSA signature fields.
+- **Canonical JCS Standardization:** Serializes documents using RFC 8785 JSON Canonicalization Scheme (JCS) before signing or verifying to guarantee payload format consistency.
+- **Race Condition Prevention:** Integrates strict task gating at startup in the VS Code extension to block tasks if workspace initialization has not fully completed.
+- **Secure File Permissions:** Enforces Unix `0o600` (read/write by owner only) permissions when writing private keys to local storage to prevent key compromise.
+- **HTTP request timeouts:** Cares for connection issues by enforcing a strict 5-second timeout on all outbound requests to the attestation registry to prevent app lockups.
+
+---
+
 ## Licensing
 
 Apache 2.0 - See the [LICENSE](./LICENSE) file for the full legal text.
