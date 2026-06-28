@@ -4,6 +4,14 @@ All notable changes to the IdentaBar project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [1.1.2] - 2026-06-29
+
+### Added
+- **Firefox Add-on compliance:** Configured browser extension package for Firefox Add-on submission with data collection permissions and background script fallbacks.
+- **VS Code Marketplace Publication:** Published the official VS Code client extension as "IdentaBar Client for VS Code".
+
+### Changed
+- **Branding Alignment:** Standardized display names, publisher settings, and icon resources across extensions.
 
 ## [1.1.1] - 2026-06-28
 

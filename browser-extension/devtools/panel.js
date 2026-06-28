@@ -111,7 +111,7 @@ function loadActiveTabData() {
     // Setup agent selector
     if (currentAgents.length > 1) {
       selectorContainer.style.display = 'flex';
-      agentSelector.innerHTML = '';
+      agentSelector.textContent = '';
       currentAgents.forEach((agent, index) => {
         const option = document.createElement('option');
         option.value = index;
@@ -152,7 +152,7 @@ function renderAgentDetails(agent) {
   ownerEl.textContent = agent.owner || 'Unknown';
   
   // Capabilities
-  capsEl.innerHTML = '';
+  capsEl.textContent = '';
   const caps = agent.capabilities || [];
   if (caps.length > 0) {
     caps.forEach(cap => {
@@ -290,7 +290,7 @@ function printConsoleLog(text, type = 'info') {
   line.appendChild(msg);
 
   if (verifyConsole.textContent.startsWith('Console Idle')) {
-    verifyConsole.innerHTML = '';
+    verifyConsole.textContent = '';
   }
   verifyConsole.appendChild(line);
   verifyConsole.scrollTop = verifyConsole.scrollHeight;

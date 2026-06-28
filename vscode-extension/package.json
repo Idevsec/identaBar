@@ -1,9 +1,10 @@
 {
-  "name": "identabar-vscode",
-  "displayName": "IdentaBar VS Code Client",
+  "name": "identabar",
+  "displayName": "IdentaBar Client for VS Code",
   "description": "Cryptographic AI Agent identity verifier and attestation gatekeeper using the Creduent protocol.",
-  "version": "1.0.0",
-  "publisher": "idevsec",
+  "version": "1.0.4",
+  "publisher": "IDevSec",
+  "license": "Apache-2.0",
   "icon": "resources/icon.png",
   "repository": {
     "type": "git",

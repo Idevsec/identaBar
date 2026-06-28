@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     publicKeyEl.textContent = formatPublicKey(fullPublicKey);
 
     // Populate capabilities tags
-    tagsContainer.innerHTML = '';
+    tagsContainer.textContent = '';
     const capabilities = agent.capabilities || [];
     if (capabilities.length > 0) {
       capabilities.forEach(cap => {
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (agents.length > 1) {
       // Setup dropdown selector
       selectorContainer.style.display = 'block';
-      agentSelector.innerHTML = '';
+      agentSelector.textContent = '';
       agents.forEach((agent, idx) => {
         const option = document.createElement('option');
         option.value = idx;
@@ -139,18 +139,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     navigator.clipboard.writeText(fullPublicKey).then(() => {
       // Temporary check visual state
-      const originalSvg = copyBtn.innerHTML;
-      copyBtn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" style="width: 12px; height: 12px;">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      `;
-      copyBtn.style.pointerEvents = 'none';
+      const defaultIcon = copyBtn.querySelector('.default-icon');
+      const successIcon = copyBtn.querySelector('.success-icon');
+      if (defaultIcon && successIcon) {
+        defaultIcon.style.display = 'none';
+        successIcon.style.display = 'inline-block';
+        copyBtn.style.pointerEvents = 'none';
 
-      setTimeout(() => {
-        copyBtn.innerHTML = originalSvg;
-        copyBtn.style.pointerEvents = 'auto';
-      }, 1500);
+        setTimeout(() => {
+          defaultIcon.style.display = 'inline-block';
+          successIcon.style.display = 'none';
+          copyBtn.style.pointerEvents = 'auto';
+        }, 1500);
+      }
     }).catch(err => {
       console.error('Failed to copy key: ', err);
     });
