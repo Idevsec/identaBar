@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "IdentaBar",
   "version": "1.0.0",
-  "description": "Verify AI Agent identities using the Creduent protocol standard by IDevSec. See trust badges, attestation records, and cryptographic proofs for any website.",
+  "description": "Verify AI Agent identities using the Creduent protocol. See trust badges and cryptographic proofs for any website.",
   "browser_specific_settings": {
     "gecko": {
       "id": "creduent-verifier@idevsec.com",
@@ -34,8 +34,7 @@
     }
   },
   "background": {
-    "service_worker": "background/background.js",
-    "scripts": ["background/background.js"]
+    "service_worker": "background/background.js"
   },
   "content_scripts": [
     {
