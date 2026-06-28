@@ -54,7 +54,7 @@
       "properties": {
         "identabar.registryUrl": {
           "type": "string",
-          "default": "https://registry.idevsec.com",
+          "default": "https://creduent.idevsec.com",
           "description": "The URL of the IDevSec Creduent Registry."
         },
         "identabar.enableAutomaticScanning": {
@@ -87,7 +87,8 @@
       "identabar-explorer": [
         {
           "id": "identabar.agentsView",
-          "name": "Workspace Agents"
+          "name": "Workspace Agents",
+          "icon": "resources/icon.svg"
         }
       ]
     }

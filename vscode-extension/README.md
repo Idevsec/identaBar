@@ -28,7 +28,7 @@ You can customize the extension via VS Code settings (`ctrl+,`):
 
 | Setting | Default | Description |
 |---|---|---|
-| `identabar.registryUrl` | `https://registry.idevsec.com` | Custom endpoint for your Creduent registry resolver. |
+| `identabar.registryUrl` | `https://creduent.idevsec.com` | Custom endpoint for your Creduent registry resolver. |
 | `identabar.enableAutomaticScanning` | `true` | Scans workspace directories on startup. |
 | `identabar.attestationStrictness` | `standard` | Strictness policy: `strict` (block tasks on unverified agent detection), `standard` (warn on missing/expired credentials), `lax` (logging only). |
 

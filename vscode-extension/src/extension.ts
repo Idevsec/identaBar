@@ -183,7 +183,7 @@ async function runWorkspaceVerification() {
 async function verifyAgentAttestation(agentJson: any): Promise<any> {
   const agentId = agentJson.agent_id;
   const config = vscode.workspace.getConfiguration('identabar');
-  const registryUrl = config.get<string>('registryUrl', 'https://registry.idevsec.com');
+  const registryUrl = config.get<string>('registryUrl', 'https://creduent.idevsec.com');
 
   // Check memory cache first
   if (attestationCache.has(agentId)) {

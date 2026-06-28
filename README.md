@@ -25,7 +25,7 @@ This repository is organized as a monorepo:
 Both clients follow the same zero-dependency cryptographic flow:
 
 1. **Resolution**: Detects agent metadata declarations (`agent.json`).
-2. **Registry Fetch**: Connects to the registry resolver at `https://registry.idevsec.com` to fetch the agent's JCS attestation token.
+2. **Registry Fetch**: Connects to the registry resolver at `https://creduent.idevsec.com` to fetch the agent's JCS attestation token.
 3. **Local Validation**: Downloads the official verification public key once and verifies the document signature locally using native Web Crypto (in browsers) or the native `crypto` module (in VS Code).
 4. **Enforcement**: Validates revocation status and expiration limits (`valid_until` / `expires_at`), updating the visual trust badges accordingly.
 

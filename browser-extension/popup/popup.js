@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Update button links
-    btnRegistry.href = agent.registry_url || 'https://registry.idevsec.com/resolver';
+    btnRegistry.href = agent.registry_url || 'https://creduent.idevsec.com/resolver';
     btnSchema.href = `https://${agent.domain}/.well-known/agent.json`;
   }
 
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addLog(`Requesting session challenge from registry...`);
     const startTime = performance.now();
     try {
-      const challengeUrl = `https://registry.idevsec.com/challenge/${encodeURIComponent(agentId)}`;
+      const challengeUrl = `https://creduent.idevsec.com/challenge/${encodeURIComponent(agentId)}`;
       const chalRes = await fetch(challengeUrl);
       if (chalRes.ok) {
         const challengeData = await chalRes.json();

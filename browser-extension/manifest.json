@@ -15,7 +15,7 @@
     "tabs"
   ],
   "host_permissions": [
-    "https://registry.idevsec.com/*"
+    "https://creduent.idevsec.com/*"
   ],
   "icons": {
     "16": "assets/icons/icon16.png",

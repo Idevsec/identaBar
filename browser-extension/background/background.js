@@ -63,7 +63,7 @@ async function checkDomainAgent(tabId, url) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
         
-        const response = await fetch(`https://registry.idevsec.com/agents?query=${encodeURIComponent(queryHost)}`, {
+        const response = await fetch(`https://creduent.idevsec.com/agents?query=${encodeURIComponent(queryHost)}`, {
           signal: controller.signal
         });
         clearTimeout(timeoutId);
@@ -131,7 +131,7 @@ async function fetchRegistryAttestation(agentId, domain) {
       ? 'agent://' + agentId.slice(7) 
       : agentId;
 
-    const response = await fetch(`https://registry.idevsec.com/attest/${encodeURIComponent(cleanAgentId)}`);
+    const response = await fetch(`https://creduent.idevsec.com/attest/${encodeURIComponent(cleanAgentId)}`);
     if (response.ok) {
       const attestation = await response.json();
       
@@ -196,7 +196,7 @@ async function fetchRegistryAttestation(agentId, domain) {
         capabilities: attestation.capabilities || [],
         owner: attestation.owner || 'Unknown',
         domain: domain,
-        registry_url: `https://registry.idevsec.com/resolver?uri=${encodeURIComponent(cleanAgentId)}`
+        registry_url: `https://creduent.idevsec.com/resolver?uri=${encodeURIComponent(cleanAgentId)}`
       };
     } else if (response.status === 410) {
       // Revoked agents return 410
@@ -210,7 +210,7 @@ async function fetchRegistryAttestation(agentId, domain) {
         capabilities: [],
         owner: 'Revoked',
         domain: domain,
-        registry_url: `https://registry.idevsec.com/resolver?uri=${encodeURIComponent(cleanAgentId)}`
+        registry_url: `https://creduent.idevsec.com/resolver?uri=${encodeURIComponent(cleanAgentId)}`
       };
     }
   } catch (e) {
@@ -228,7 +228,7 @@ async function getRegistryPublicKey() {
   if (registryPublicKeyCache) return registryPublicKeyCache;
 
   try {
-    const response = await fetch('https://registry.idevsec.com/public-key');
+    const response = await fetch('https://creduent.idevsec.com/public-key');
     if (response.ok) {
       const data = await response.json();
       if (data && data.public_key) {
