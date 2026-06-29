@@ -33,25 +33,34 @@ IdentaBar is a client-side browser extension (Manifest V3) that verifies the ide
 ## Local Installation & Development
 
 ### 1. Chromium Browsers (Chrome / Edge / Brave / Opera)
-1. Clone this repository and navigate to the `browser-extension/` directory.
-2. Open your browser and go to the Extensions page:
+1. Clone this repository.
+2. From the root directory, synchronize the shared verification files:
+   ```bash
+   node sync-shared.js
+   ```
+   *(This creates a directory symlink/junction under `browser-extension/shared/` so that any edits to the core verification code are instantly live.)*
+3. Open your browser and go to the Extensions page:
    - Chrome: `chrome://extensions/`
    - Edge: `edge://extensions/`
-3. Enable **Developer mode** (toggle in the top-right corner).
-4. Click **Load unpacked** (button in the top-left corner).
-5. Select the `browser-extension/` directory.
+4. Enable **Developer mode** (toggle in the top-right corner).
+5. Click **Load unpacked** (button in the top-left corner).
+6. Select the `browser-extension/` directory.
 
 ### 2. Mozilla Firefox
 Firefox requires packing the extension using `web-ext` for MV3 compatibility testing:
-1. Install `web-ext` globally:
+1. From the root directory, sync the shared files in copy mode:
+   ```bash
+   node sync-shared.js --copy
+   ```
+2. Install `web-ext` globally:
    ```bash
    npm install -g web-ext
    ```
-2. Build the extension package:
+3. Build the extension package:
    ```bash
    web-ext build --source-dir ./browser-extension
    ```
-3. Load the generated `.zip` archive as a temporary add-on in `about:debugging`.
+4. Load the generated `.zip` archive as a temporary add-on in `about:debugging`.
 
 ---
 
@@ -72,9 +81,10 @@ browser-extension/
 │   └── panel.js          # Handles signature checks and verifier playground
 ├── lib/
 │   └── browser-compat.js # Cross-browser chrome vs browser namespace shim
-└── popup/
+├── popup/
     ├── popup.html        # Attestation card view
     └── popup.js          # Populates attestation records on click
+└── shared/               # Link/Copy of the root-level shared/ verification module
 ```
 
 ---

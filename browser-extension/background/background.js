@@ -1,5 +1,6 @@
 // Load cross-browser compatibility shim (Chrome + Firefox)
 importScripts('../lib/browser-compat.js');
+importScripts('../shared/verification.js');
 
 // Cache to store resolved agent data to avoid redundant network lookups
 const resolutionCache = new Map();
@@ -131,75 +132,9 @@ async function fetchRegistryAttestation(agentId, domain) {
       ? 'agent://' + agentId.slice(7) 
       : agentId;
 
-    const response = await fetch(`https://creduent.idevsec.com/attest/${encodeURIComponent(cleanAgentId)}`);
-    if (response.ok) {
-      const attestation = await response.json();
-      
-      // Perform cryptographic signature verification locally!
-      let signatureVerified = false;
-      const signatureB64 = attestation.signature;
-      if (signatureB64) {
-        const attestationDoc = { ...attestation };
-        delete attestationDoc.signature; // Pop signature for canonical checks
-        delete attestationDoc.status;    // Pop any ephemeral status tags added by endpoints
-        delete attestationDoc.expired;   // Pop ephemeral expiration flags
-        
-        const canonicalStr = canonicalize(attestationDoc);
-        const registryPubKey = await getRegistryPublicKey();
-        if (registryPubKey) {
-          try {
-            const sigBytes = base64ToBytes(signatureB64);
-            const dataBytes = new TextEncoder().encode(canonicalStr);
-            signatureVerified = await crypto.subtle.verify(
-              "Ed25519",
-              registryPubKey,
-              sigBytes,
-              dataBytes
-            );
-            console.log(`[Creduent] Signature verification for ${cleanAgentId}:`, signatureVerified ? 'PASSED' : 'FAILED');
-          } catch (cryptoErr) {
-            console.error('[Creduent] Crypto verification execution error:', cryptoErr);
-          }
-        }
-      }
+    const validation = await CreduentVerification.fetchAndVerifyRegistryAttestation(cleanAgentId, 'https://creduent.idevsec.com');
 
-      // Check for expiration
-      let isExpired = false;
-      if (attestation.expired === true) {
-        isExpired = true;
-      } else {
-        const expValue = attestation.valid_until || attestation.expires;
-        if (expValue) {
-          try {
-            let expMs = 0;
-            if (typeof expValue === 'number') {
-              expMs = expValue < 10000000000 ? expValue * 1000 : expValue;
-            } else if (typeof expValue === 'string') {
-              expMs = Date.parse(expValue);
-            }
-            if (expMs && Date.now() > expMs) {
-              isExpired = true;
-            }
-          } catch (e) {
-            console.error('[Creduent] Error parsing expiration time:', e);
-          }
-        }
-      }
-
-      return {
-        status: 'found',
-        level: isExpired ? 'expired' : (signatureVerified ? (attestation.level || 'unverified') : 'unverified'),
-        signature_verified: signatureVerified,
-        expired: isExpired,
-        agent_id: attestation.agent_id || cleanAgentId,
-        public_key: attestation.public_key || '',
-        capabilities: attestation.capabilities || [],
-        owner: attestation.owner || 'Unknown',
-        domain: domain,
-        registry_url: `https://creduent.idevsec.com/resolver?uri=${encodeURIComponent(cleanAgentId)}`
-      };
-    } else if (response.status === 410) {
-      // Revoked agents return 410
+    if (validation.status === 'revoked') {
       return {
         status: 'found',
         level: 'revoked',
@@ -213,78 +148,28 @@ async function fetchRegistryAttestation(agentId, domain) {
         registry_url: `https://creduent.idevsec.com/resolver?uri=${encodeURIComponent(cleanAgentId)}`
       };
     }
+
+    if (validation.attestation) {
+      const attestation = validation.attestation;
+      return {
+        status: 'found',
+        level: validation.status,
+        signature_verified: validation.status === 'trusted' || validation.status === 'verified',
+        expired: validation.status === 'expired',
+        agent_id: attestation.agent_id || cleanAgentId,
+        public_key: attestation.public_key || '',
+        capabilities: attestation.capabilities || [],
+        owner: attestation.owner || 'Unknown',
+        domain: domain,
+        registry_url: `https://creduent.idevsec.com/resolver?uri=${encodeURIComponent(cleanAgentId)}`
+      };
+    }
   } catch (e) {
     console.error(`[Creduent] Error fetching attestation for ${agentId}:`, e);
   }
   return null;
 }
 
-let registryPublicKeyCache = null;
-
-/**
- * Loads the registry's public key from the registry and imports it into subtle crypto.
- */
-async function getRegistryPublicKey() {
-  if (registryPublicKeyCache) return registryPublicKeyCache;
-
-  try {
-    const response = await fetch('https://creduent.idevsec.com/public-key');
-    if (response.ok) {
-      const data = await response.json();
-      if (data && data.public_key) {
-        let pubKeyBase64 = data.public_key;
-        if (pubKeyBase64.startsWith('ed25519:')) {
-          pubKeyBase64 = pubKeyBase64.split(':', 2)[1];
-        }
-        
-        const rawKeyBytes = base64ToBytes(pubKeyBase64);
-        registryPublicKeyCache = await crypto.subtle.importKey(
-          "raw",
-          rawKeyBytes,
-          { name: "Ed25519" },
-          false,
-          ["verify"]
-        );
-        console.log('[Creduent] Loaded Registry Public Key');
-        return registryPublicKeyCache;
-      }
-    }
-  } catch (e) {
-    console.error('[Creduent] Failed to fetch/import registry public key:', e);
-  }
-  return null;
-}
-
-/**
- * JCS Canonicalization Scheme (RFC 8785) in JavaScript
- */
-function canonicalize(val) {
-  if (val === null) return 'null';
-  if (typeof val !== 'object') {
-    return JSON.stringify(val);
-  }
-  if (Array.isArray(val)) {
-    return '[' + val.map(canonicalize).join(',') + ']';
-  }
-  const keys = Object.keys(val).sort();
-  const parts = keys.map(k => {
-    return JSON.stringify(k) + ':' + canonicalize(val[k]);
-  });
-  return '{' + parts.join(',') + '}';
-}
-
-/**
- * Base64 helper
- */
-function base64ToBytes(base64) {
-  const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
 
 /**
  * Updates the extension badge based on trust level

@@ -95,9 +95,9 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "vscode:prepublish": "node ../sync-shared.js --copy && npm run compile",
+    "compile": "node ../sync-shared.js && tsc -p ./",
+    "watch": "node ../sync-shared.js && tsc -watch -p ./"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",

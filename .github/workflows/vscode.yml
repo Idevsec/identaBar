@@ -1,0 +1,52 @@
+name: Package VS Code Extension
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'vscode-extension/**'
+      - 'shared/**'
+      - 'sync-shared.js'
+      - '.github/workflows/vscode.yml'
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-vscode:
+    name: Package VS Code Extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: |
+          cd vscode-extension
+          npm ci
+
+      - name: Sync Shared Folder (Copy Mode)
+        run: node sync-shared.js --copy
+
+      - name: Compile Extension
+        run: |
+          cd vscode-extension
+          npm run compile
+
+      - name: Package VSIX
+        run: |
+          cd vscode-extension
+          npx @vscode/vsce package -o ../identabar-vscode.vsix
+
+      - name: Upload VSIX Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: identabar-vscode-extension
+          path: identabar-vscode.vsix

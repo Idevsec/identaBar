@@ -74,17 +74,17 @@ If you are running the registry server locally (`http://localhost:3000`) and the
 
 To build and run the extension locally in VS Code:
 
-1. Navigate to the `vscode-extension/` directory.
+1. Clone the repository and navigate to the `vscode-extension/` directory.
 2. Install compilation dependencies:
    ```bash
    npm install
    ```
-3. Compile the typescript code:
+3. Compile the TypeScript code (this automatically runs `sync-shared.js` to link the shared core verification module to `src/shared/`):
    ```bash
    npm run compile
    ```
 4. Press `F5` in VS Code to launch a new **Extension Development Host** session and run the extension live.
-5. Pack the extension into a `.vsix` file:
+5. Pack the extension into a `.vsix` file (this automatically copies the shared verification files in release/prepublish mode):
    ```bash
    npx @vscode/vsce package
    ```

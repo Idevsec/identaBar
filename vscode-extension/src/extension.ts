@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import * as crypto from 'crypto';
-import * as https from 'https';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as verification from './shared/verification';
 
 // Ephemeral cache to store resolved attestation documents in memory
 const attestationCache = new Map<string, any>();
@@ -220,64 +220,18 @@ async function verifyAgentAttestation(agentJson: any, forceRefresh = false): Pro
   };
 
   try {
-    // 1. Fetch attestation from registry
-    outputChannel.appendLine(`Contacting registry for attestation: ${registryUrl}/attest/${encodeURIComponent(agentId)}`);
-    const attestationRaw = await fetchHttp(`${registryUrl}/attest/${encodeURIComponent(agentId)}`);
-    const attestation = JSON.parse(attestationRaw);
-
-    if (!attestation || !attestation.signature) {
-      result.message = 'Registry attestation record contains no signature.';
-      return cacheAndReturn(agentId, result);
+    outputChannel.appendLine(`Verifying agent identity via registry: ${registryUrl}`);
+    const validation = await verification.fetchAndVerifyRegistryAttestation(agentId, registryUrl);
+    
+    result.status = validation.status;
+    result.message = validation.message;
+    
+    if (validation.attestation) {
+      result.owner = validation.attestation.owner || result.owner;
+      result.capabilities = validation.attestation.capabilities || result.capabilities;
+      result.domain = validation.attestation.domain || '';
+      result.endpoint = validation.attestation.endpoint || '';
     }
-
-    // 2. Fetch public key from registry
-    const publicKeyRaw = await fetchHttp(`${registryUrl}/public-key`);
-    const publicKeyData = JSON.parse(publicKeyRaw);
-    const publicKeyPem = publicKeyData.publicKeyPem || publicKeyData.public_key;
-
-    if (!publicKeyPem) {
-      result.message = 'Could not retrieve registry public verification key.';
-      return cacheAndReturn(agentId, result);
-    }
-
-    // 3. Verify attestation document signature using Ed25519
-    const isSignatureValid = verifyEd25519Signature(
-      attestation,
-      attestation.signature,
-      publicKeyPem
-    );
-
-    if (!isSignatureValid) {
-      result.status = 'unverified';
-      result.message = 'Attestation signature validation failed.';
-      return cacheAndReturn(agentId, result);
-    }
-
-    // 4. Check revocation
-    if (attestation.revoked === true) {
-      result.status = 'revoked';
-      result.message = 'Identity revoked by issuer.';
-      return cacheAndReturn(agentId, result);
-    }
-
-    // 5. Check expiration date (valid_until or expires_at)
-    const expires = attestation.expires_at || attestation.valid_until;
-    if (expires) {
-      const expirationDate = new Date(expires);
-      if (expirationDate.getTime() < Date.now()) {
-        result.status = 'expired';
-        result.message = `Attestation expired on ${expirationDate.toISOString()}`;
-        return cacheAndReturn(agentId, result);
-      }
-    }
-
-    // Passed all checks
-    result.owner = attestation.owner || result.owner;
-    result.capabilities = attestation.capabilities || result.capabilities;
-    result.domain = attestation.domain || '';
-    result.endpoint = attestation.endpoint || '';
-    result.status = attestation.level === 'trusted' ? 'trusted' : 'verified';
-    result.message = 'Cryptographically secure. Attestation valid.';
   } catch (err: any) {
     outputChannel.appendLine(`[Error] Verification process failed: ${err.message}`);
     result.message = `Registry check error: ${err.message}`;
@@ -291,78 +245,6 @@ function cacheAndReturn(agentId: string, result: any): any {
   return result;
 }
 
-/**
- * JCS Canonicalization Scheme (RFC 8785)
- */
-function canonicalize(val: any): string {
-  if (val === null) return 'null';
-  if (typeof val !== 'object') {
-    return JSON.stringify(val);
-  }
-  if (Array.isArray(val)) {
-    return '[' + val.map(canonicalize).join(',') + ']';
-  }
-  const keys = Object.keys(val).sort();
-  const parts = keys.map(k => {
-    return JSON.stringify(k) + ':' + canonicalize(val[k]);
-  });
-  return '{' + parts.join(',') + '}';
-}
-
-/**
- * Handles HTTP GET query.
- */
-function fetchHttp(url: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, (res: any) => {
-      if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
-        return reject(new Error(`Server returned status code ${res.statusCode}`));
-      }
-      let body = '';
-      res.on('data', (chunk: any) => body += chunk);
-      res.on('end', () => resolve(body));
-    });
-    req.on('error', (err: any) => reject(err));
-    req.setTimeout(5000, () => {
-      req.destroy();
-      reject(new Error('Request timed out after 5000ms'));
-    });
-  });
-}
-
-/**
- * Verifies Ed25519 signature of JCS data.
- */
-function verifyEd25519Signature(data: any, signatureB64: string, publicKeyPem: string): boolean {
-  try {
-    const dataToVerify = { ...data };
-    delete dataToVerify.signature;
-    delete dataToVerify.status;
-    delete dataToVerify.expired;
-
-    const message = canonicalize(dataToVerify);
-    const signatureBuffer = Buffer.from(signatureB64, 'base64');
-    
-    let keyObject: crypto.KeyObject | string = publicKeyPem;
-    
-    if (publicKeyPem.startsWith('ed25519:')) {
-      const pubKeyBase64 = publicKeyPem.split(':', 2)[1];
-      const rawKey = Buffer.from(pubKeyBase64, 'base64');
-      const oidHeader = Buffer.from([0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00]);
-      const spkiBuffer = Buffer.concat([oidHeader, rawKey]);
-      keyObject = crypto.createPublicKey({
-        key: spkiBuffer,
-        format: 'der',
-        type: 'spki'
-      });
-    }
-    
-    return crypto.verify(null, Buffer.from(message), keyObject, signatureBuffer);
-  } catch (err) {
-    outputChannel.appendLine(`[Crypto Error] Signature verification process failed: ${err}`);
-    return false;
-  }
-}
 
 /**
  * Updates status bar colors and icons based on validation results.
@@ -583,7 +465,7 @@ async function createAgentIdentity() {
     };
 
     // Sign the canonical payload
-    const message = canonicalize(agentObj);
+    const message = verification.canonicalize(agentObj);
     const signature = crypto.sign(null, Buffer.from(message), privateKey);
     const finalAgentJson = {
       ...agentObj,

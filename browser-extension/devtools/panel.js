@@ -228,26 +228,8 @@ verifyRunBtn.addEventListener('click', async () => {
   }
 
   try {
-    const rawKeyBytes = base64ToBytes(pubKeyBase64);
-    const sigBytes = base64ToBytes(signatureB64);
-    const dataBytes = new TextEncoder().encode(message);
-
-    printConsoleLog('Importing raw public key into SubtleCrypto framework...');
-    const cryptoKey = await crypto.subtle.importKey(
-      "raw",
-      rawKeyBytes,
-      { name: "Ed25519" },
-      false,
-      ["verify"]
-    );
-
-    printConsoleLog('Executing Ed25519 verifying algorithm...');
-    const verified = await crypto.subtle.verify(
-      "Ed25519",
-      cryptoKey,
-      sigBytes,
-      dataBytes
-    );
+    printConsoleLog('Executing Ed25519 verifying algorithm using shared module...');
+    const verified = await CreduentVerification.verifyRawEd25519(message, signatureB64, pubKeyBase64);
 
     if (verified) {
       printConsoleLog('✓ SIGNATURE VALIDATION: PASSED!', 'success');
@@ -296,16 +278,6 @@ function printConsoleLog(text, type = 'info') {
   verifyConsole.scrollTop = verifyConsole.scrollHeight;
 }
 
-// Convert Base64 string to Uint8Array
-function base64ToBytes(base64) {
-  const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
 
 // Listen for tab navigation inside devtools context
 chrome.devtools.network.onNavigated.addListener(() => {

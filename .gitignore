@@ -50,6 +50,7 @@ dist/
 build/
 out/
 web-ext-artifacts/
+*.vsix
 
 # Firefox web-ext tool output
 .web-ext-cache/
@@ -61,3 +62,7 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# Generated shared folders
+vscode-extension/src/shared/
+browser-extension/shared/

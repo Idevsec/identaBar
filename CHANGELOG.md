@@ -4,6 +4,18 @@ All notable changes to the IdentaBar project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.2.0] - 2026-06-30
+
+### Added
+- **Unified Cryptographic Module:** Created a single cross-platform `shared/verification.js` script containing JCS canonicalization, base64 conversion, Ed25519 verification, and registry attestation retrieval.
+- **Dynamic Linking Sync Script:** Built `sync-shared.js` to create directory junctions/symlinks locally (for instant development reloading) and copy files in CI environments.
+- **Dedicated GitHub Actions Workflows:** Replaced `package.yml` with separate, path-triggered `browser.yml` and `vscode.yml` workflows.
+
+### Changed
+- **VS Code Extension Build Process:** Configured extension packaging to run `sync-shared.js` automatically.
+- **Repository Metadata:** Programmatically configured the repository description, homepage, and topics using `gh repo edit`.
+
 ## [1.1.2] - 2026-06-29
 
 ### Added
