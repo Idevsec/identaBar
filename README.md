@@ -37,7 +37,7 @@ Both clients follow the same zero-dependency cryptographic flow:
 
 ## Browser & IDE Support
 
-- **Browsers**: Chrome, Edge, Brave, Opera, Firefox 109+ (using the `browser-compat` shim).
+- **Browsers**: Firefox 109+ (available on [Mozilla Add-ons](https://addons.mozilla.org/en-US/firefox/addon/identabar/)), Chrome & Edge (coming soon, currently in store review), Brave, Opera.
 - **IDEs**: VS Code & VSCodium (available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=idevsec.identabar) and the [Open VSX Registry](https://open-vsx.org/extension/IDevSec/identabar)).
 
 ---
