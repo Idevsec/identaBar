@@ -36,7 +36,7 @@ jobs:
           zip -r ../identabar-browser-extension.zip . -x "*.git*" "*.github*"
 
       - name: Upload Browser Extension Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: identabar-browser-extension
           path: identabar-browser-extension.zip
