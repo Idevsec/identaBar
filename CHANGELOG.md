@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.1] - 2026-07-04
 
 ### Added
+
 - **Community Standardization Guides:** Created `CODE_OF_CONDUCT.md`, `SECURITY.md`, and `CONTRIBUTING.md`.
 - **Editor & Formatting Rules:** Configured `.editorconfig` (spaces, LF, trim trailing whitespaces) and `.prettierrc` for consistent formatting.
 - **Pre-commit Guards & Workflows:** Added `.pre-commit-config.yaml` with Prettier checks and created `.github/workflows/auto-format.yml` to automate style corrections on push/PRs.
