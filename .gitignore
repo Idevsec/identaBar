@@ -66,3 +66,6 @@ coverage/
 # Generated shared folders
 vscode-extension/src/shared/
 browser-extension/shared/
+
+# Agent instructions
+agent.md

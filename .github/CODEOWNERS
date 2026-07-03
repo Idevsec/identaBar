@@ -1,0 +1,14 @@
+# Default reviewers
+* @cyberfascinate
+
+# Shared core logic
+/shared/ @cyberfascinate
+
+# Browser extension client
+/browser-extension/ @cyberfascinate
+
+# VS Code extension client
+/vscode-extension/ @cyberfascinate
+
+# GitHub configuration
+/.github/ @cyberfascinate
