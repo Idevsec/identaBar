@@ -27,7 +27,7 @@ jobs:
         run: npx prettier --write "**/*.{js,ts,json,css,md}"
 
       - name: Auto-commit formatted files
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "style: auto-format code with Prettier"
           commit_user_name: "github-actions[bot]"
