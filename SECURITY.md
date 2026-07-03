@@ -18,10 +18,11 @@ Only the latest release of IdentaBar is actively supported with security patches
 ## Security Guarantees & Verification Integrity
 
 IdentaBar implements strict safety and cryptographic validation measures:
-*   **100% Client-Side Verification:** Cryptographic computations are executed entirely locally without sending user browsing/development history or keys to third-party endpoints.
-*   **Ed25519 Checking:** Employs raw Node.js `crypto.verify` (and Web Crypto API in browser engines) instead of hash-based streams to directly check Ed25519/EdDSA signature fields.
-*   **Canonical JCS Standardization:** Serializes documents using RFC 8785 JSON Canonicalization Scheme (JCS) before signing or verifying to guarantee payload format consistency.
-*   **Secure File Permissions:** Enforces Unix `0o600` (read/write by owner only) permissions when writing private keys to local storage to prevent key compromise.
+
+- **100% Client-Side Verification:** Cryptographic computations are executed entirely locally without sending user browsing/development history or keys to third-party endpoints.
+- **Ed25519 Checking:** Employs raw Node.js `crypto.verify` (and Web Crypto API in browser engines) instead of hash-based streams to directly check Ed25519/EdDSA signature fields.
+- **Canonical JCS Standardization:** Serializes documents using RFC 8785 JSON Canonicalization Scheme (JCS) before signing or verifying to guarantee payload format consistency.
+- **Secure File Permissions:** Enforces Unix `0o600` (read/write by owner only) permissions when writing private keys to local storage to prevent key compromise.
 
 ---
 

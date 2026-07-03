@@ -11,16 +11,19 @@ IdentaBar secures both your browser browsing session and your local workspace de
 This repository is organized as a monorepo:
 
 ### 1. [`shared/`](./shared/)
-* **What it is:** The core cryptographic verification module shared between both clients.
-* **How it syncs:** Run `node sync-shared.js` at the root. In local development, it creates directory symlinks/junctions for real-time hot-reloading. In CI/production builds, it copies files recursively.
+
+- **What it is:** The core cryptographic verification module shared between both clients.
+- **How it syncs:** Run `node sync-shared.js` at the root. In local development, it creates directory symlinks/junctions for real-time hot-reloading. In CI/production builds, it copies files recursively.
 
 ### 2. [`browser-extension/`](./browser-extension/README.md)
-* **What it is:** A Manifest V3 web extension for Google Chrome, Microsoft Edge, Brave, Opera, and Mozilla Firefox (109+).
-* **What it does:** Automatically scans domains you visit for agent identity configurations, resolves attestation certificates from the registry, and displays real-time trust badges (`★`, `✓`, `!`, `✕`, `?`) in your browser toolbar. Includes an advanced DevTools verification playground.
+
+- **What it is:** A Manifest V3 web extension for Google Chrome, Microsoft Edge, Brave, Opera, and Mozilla Firefox (109+).
+- **What it does:** Automatically scans domains you visit for agent identity configurations, resolves attestation certificates from the registry, and displays real-time trust badges (`★`, `✓`, `!`, `✕`, `?`) in your browser toolbar. Includes an advanced DevTools verification playground.
 
 ### 3. [`vscode-extension/`](./vscode-extension/README.md)
-* **What it is:** A desktop integration extension for Visual Studio Code.
-* **What it does:** Scans workspace folders for agent files, performs local Ed25519 signature checks, displays trust ratings in the status bar, and provides a custom side panel view showing agent credentials and permissions.
+
+- **What it is:** A desktop integration extension for Visual Studio Code.
+- **What it does:** Scans workspace folders for agent files, performs local Ed25519 signature checks, displays trust ratings in the status bar, and provides a custom side panel view showing agent credentials and permissions.
 
 ---
 

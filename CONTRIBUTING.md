@@ -7,23 +7,28 @@ Thank you for your interest in contributing to IdentaBar! This guide helps you s
 ## Development Setup
 
 IdentaBar is organized as a monorepo containing:
+
 1. `shared/`: The core cryptographic verification module.
 2. `browser-extension/`: A Manifest V3 web extension for Chromium-based browsers and Firefox.
 3. `vscode-extension/`: A desktop integration extension for Visual Studio Code.
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/idevsec/IdentaBar.git
 cd IdentaBar
 ```
 
 ### 2. Install Root & Extension Dependencies
+
 ```bash
 npm install
 ```
 
 ### 3. Synchronize Shared Files
+
 Before developing, you must run the shared synchronization script to create local development links:
+
 ```bash
 # For Chromium browsers & VS Code:
 node sync-shared.js
@@ -33,19 +38,21 @@ node sync-shared.js --copy
 ```
 
 For specific details on running and packaging each client, please refer to:
-* [browser-extension/README.md](./browser-extension/README.md)
-* [vscode-extension/README.md](./vscode-extension/README.md)
+
+- [browser-extension/README.md](./browser-extension/README.md)
+- [vscode-extension/README.md](./vscode-extension/README.md)
 
 ---
 
 ## Code Guidelines & Robustness Guarantees
 
 Please ensure all contributions respect our strict design and security principles:
-* **Correct Ed25519 Checking:** Employs raw Node.js `crypto.verify` (and Web Crypto API in browser engines) instead of hash-based streams to directly check Ed25519/EdDSA signature fields.
-* **Canonical JCS Standardization:** Serializes documents using RFC 8785 JSON Canonicalization Scheme (JCS) before signing or verifying to guarantee payload format consistency.
-* **Race Condition Prevention:** Integrates strict task gating at startup in the VS Code extension to block tasks if workspace initialization has not fully completed.
-* **Secure File Permissions:** Enforces Unix `0o600` (read/write by owner only) permissions when writing private keys to local storage to prevent key compromise.
-* **HTTP Request Timeouts:** Cares for connection issues by enforcing a strict 5-second timeout on all outbound requests to the attestation registry to prevent app lockups.
+
+- **Correct Ed25519 Checking:** Employs raw Node.js `crypto.verify` (and Web Crypto API in browser engines) instead of hash-based streams to directly check Ed25519/EdDSA signature fields.
+- **Canonical JCS Standardization:** Serializes documents using RFC 8785 JSON Canonicalization Scheme (JCS) before signing or verifying to guarantee payload format consistency.
+- **Race Condition Prevention:** Integrates strict task gating at startup in the VS Code extension to block tasks if workspace initialization has not fully completed.
+- **Secure File Permissions:** Enforces Unix `0o600` (read/write by owner only) permissions when writing private keys to local storage to prevent key compromise.
+- **HTTP Request Timeouts:** Cares for connection issues by enforcing a strict 5-second timeout on all outbound requests to the attestation registry to prevent app lockups.
 
 ---
 
@@ -55,10 +62,10 @@ To keep the repository clean and manageable, please follow our branching convent
 
 ### Branch Naming Conventions
 
-* **Features:** Use prefix `feature/` (e.g., `feature/devtools-filtering`) for new verification features or clients.
-* **Bugfixes:** Use prefix `bugfix/` (e.g., `bugfix/race-condition-on-startup`) for fixing bugs or issues.
-* **Documentation:** Use prefix `docs/` (e.g., `docs/contributing-guidelines`) for changes to documentation or README files.
-* **Refactoring:** Use prefix `refactor/` (e.g., `refactor/subtle-crypto-wrapper`) for code refactors with no functional changes.
+- **Features:** Use prefix `feature/` (e.g., `feature/devtools-filtering`) for new verification features or clients.
+- **Bugfixes:** Use prefix `bugfix/` (e.g., `bugfix/race-condition-on-startup`) for fixing bugs or issues.
+- **Documentation:** Use prefix `docs/` (e.g., `docs/contributing-guidelines`) for changes to documentation or README files.
+- **Refactoring:** Use prefix `refactor/` (e.g., `refactor/subtle-crypto-wrapper`) for code refactors with no functional changes.
 
 ### Pull Request Process
 

@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
-import * as crypto from 'crypto';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as verification from './shared/verification';
+import * as vscode from "vscode";
+import * as crypto from "crypto";
+import * as path from "path";
+import * as fs from "fs";
+import * as verification from "./shared/verification";
 
 // Ephemeral cache to store resolved attestation documents in memory
 const attestationCache = new Map<string, any>();
@@ -13,548 +13,630 @@ let statusBarItem: vscode.StatusBarItem;
 let agentTreeProvider: AgentTreeProvider;
 
 export function activate(context: vscode.ExtensionContext) {
-  outputChannel = vscode.window.createOutputChannel('IdentaBar');
-  outputChannel.appendLine('[IdentaBar] VS Code Extension Activated.');
+    outputChannel = vscode.window.createOutputChannel("IdentaBar");
+    outputChannel.appendLine("[IdentaBar] VS Code Extension Activated.");
 
-  // Create Status Bar Item
-  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  statusBarItem.command = 'identabar.verifyWorkspace';
-  statusBarItem.text = '$(shield) IdentaBar: Ready';
-  statusBarItem.tooltip = 'Click to scan workspace for AI Agent attestation records.';
-  statusBarItem.show();
-  context.subscriptions.push(statusBarItem);
+    // Create Status Bar Item
+    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    statusBarItem.command = "identabar.verifyWorkspace";
+    statusBarItem.text = "$(shield) IdentaBar: Ready";
+    statusBarItem.tooltip = "Click to scan workspace for AI Agent attestation records.";
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
 
-  // Register Sidebar Tree Provider
-  agentTreeProvider = new AgentTreeProvider();
-  vscode.window.registerTreeDataProvider('identabar.agentsView', agentTreeProvider);
+    // Register Sidebar Tree Provider
+    agentTreeProvider = new AgentTreeProvider();
+    vscode.window.registerTreeDataProvider("identabar.agentsView", agentTreeProvider);
 
-  // Register task start listener for zero-trust gating
-  context.subscriptions.push(
-    vscode.tasks.onDidStartTask((event) => {
-      const config = vscode.workspace.getConfiguration('identabar');
-      const strictness = config.get<string>('attestationStrictness', 'standard');
-      
-      if (strictness === 'strict') {
-        const cachedResults = Array.from(attestationCache.values());
-        if (cachedResults.length === 0) {
-          vscode.window.showErrorMessage(
-            `[IdentaBar Gating Block] Task "${event.execution.task.name}" execution blocked. Workspace agents have not been verified yet. Run verification first.`,
-            'OK'
-          );
-          event.execution.terminate();
-          return;
-        }
-        const hasUnverified = cachedResults.some(a => a.status === 'unverified' || a.status === 'revoked');
-        
-        if (hasUnverified) {
-          vscode.window.showErrorMessage(
-            `[IdentaBar Gating Block] Task "${event.execution.task.name}" execution blocked. Active unverified or revoked agents found in workspace. Set strictness to standard/lax to bypass.`,
-            'OK'
-          );
-          event.execution.terminate();
-        }
-      }
-    })
-  );
+    // Register task start listener for zero-trust gating
+    context.subscriptions.push(
+        vscode.tasks.onDidStartTask((event) => {
+            const config = vscode.workspace.getConfiguration("identabar");
+            const strictness = config.get<string>("attestationStrictness", "standard");
 
-  // Register commands
-  context.subscriptions.push(
-    vscode.commands.registerCommand('identabar.verifyWorkspace', async () => {
-      await runWorkspaceVerification(true); // Force refresh on manual trigger
-    })
-  );
+            if (strictness === "strict") {
+                const cachedResults = Array.from(attestationCache.values());
+                if (cachedResults.length === 0) {
+                    vscode.window.showErrorMessage(
+                        `[IdentaBar Gating Block] Task "${event.execution.task.name}" execution blocked. Workspace agents have not been verified yet. Run verification first.`,
+                        "OK"
+                    );
+                    event.execution.terminate();
+                    return;
+                }
+                const hasUnverified = cachedResults.some((a) => a.status === "unverified" || a.status === "revoked");
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand('identabar.clearCache', () => {
-      attestationCache.clear();
-      outputChannel.appendLine('[IdentaBar] Attestation memory cache cleared.');
-      vscode.window.showInformationMessage('IdentaBar attestation cache cleared successfully.');
-      updateStatusBar('ready', 'Cache cleared. Ready to verify.');
-      agentTreeProvider.refresh([]);
-    })
-  );
+                if (hasUnverified) {
+                    vscode.window.showErrorMessage(
+                        `[IdentaBar Gating Block] Task "${event.execution.task.name}" execution blocked. Active unverified or revoked agents found in workspace. Set strictness to standard/lax to bypass.`,
+                        "OK"
+                    );
+                    event.execution.terminate();
+                }
+            }
+        })
+    );
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand('identabar.createAgentIdentity', async () => {
-      await createAgentIdentity();
-    })
-  );
+    // Register commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand("identabar.verifyWorkspace", async () => {
+            await runWorkspaceVerification(true); // Force refresh on manual trigger
+        })
+    );
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand('identabar.signFile', async (uri: vscode.Uri) => {
-      await signFile(uri);
-    })
-  );
+    context.subscriptions.push(
+        vscode.commands.registerCommand("identabar.clearCache", () => {
+            attestationCache.clear();
+            outputChannel.appendLine("[IdentaBar] Attestation memory cache cleared.");
+            vscode.window.showInformationMessage("IdentaBar attestation cache cleared successfully.");
+            updateStatusBar("ready", "Cache cleared. Ready to verify.");
+            agentTreeProvider.refresh([]);
+        })
+    );
 
-  // Auto-scan on load if enabled
-  const config = vscode.workspace.getConfiguration('identabar');
-  if (config.get<boolean>('enableAutomaticScanning', true)) {
-    runWorkspaceVerification();
-  }
+    context.subscriptions.push(
+        vscode.commands.registerCommand("identabar.createAgentIdentity", async () => {
+            await createAgentIdentity();
+        })
+    );
 
-  // File watcher to listen to real-time agent.json changes
-  const agentWatcher = vscode.workspace.createFileSystemWatcher('**/agent.json');
-  agentWatcher.onDidChange(() => {
-    outputChannel.appendLine('[IdentaBar] agent.json change detected. Re-verifying...');
-    runWorkspaceVerification(true);
-  });
-  agentWatcher.onDidCreate(() => {
-    outputChannel.appendLine('[IdentaBar] New agent.json detected. Re-verifying...');
-    runWorkspaceVerification(true);
-  });
-  agentWatcher.onDidDelete(() => {
-    outputChannel.appendLine('[IdentaBar] agent.json deleted. Re-verifying...');
-    attestationCache.clear();
-    runWorkspaceVerification(true);
-  });
-  context.subscriptions.push(agentWatcher);
+    context.subscriptions.push(
+        vscode.commands.registerCommand("identabar.signFile", async (uri: vscode.Uri) => {
+            await signFile(uri);
+        })
+    );
+
+    // Auto-scan on load if enabled
+    const config = vscode.workspace.getConfiguration("identabar");
+    if (config.get<boolean>("enableAutomaticScanning", true)) {
+        runWorkspaceVerification();
+    }
+
+    // File watcher to listen to real-time agent.json changes
+    const agentWatcher = vscode.workspace.createFileSystemWatcher("**/agent.json");
+    agentWatcher.onDidChange(() => {
+        outputChannel.appendLine("[IdentaBar] agent.json change detected. Re-verifying...");
+        runWorkspaceVerification(true);
+    });
+    agentWatcher.onDidCreate(() => {
+        outputChannel.appendLine("[IdentaBar] New agent.json detected. Re-verifying...");
+        runWorkspaceVerification(true);
+    });
+    agentWatcher.onDidDelete(() => {
+        outputChannel.appendLine("[IdentaBar] agent.json deleted. Re-verifying...");
+        attestationCache.clear();
+        runWorkspaceVerification(true);
+    });
+    context.subscriptions.push(agentWatcher);
 }
 
 export function deactivate() {
-  if (statusBarItem) {
-    statusBarItem.dispose();
-  }
+    if (statusBarItem) {
+        statusBarItem.dispose();
+    }
 }
 
 /**
  * Searches the workspace for agent metadata and verifies attestation records.
  */
 async function runWorkspaceVerification(forceRefresh = false) {
-  const folders = vscode.workspace.workspaceFolders;
-  if (!folders) {
-    updateStatusBar('none', 'No workspace folders open.');
-    return;
-  }
-
-  outputChannel.appendLine(`--- Initiating Agent Attestation Scan (Force Refresh: ${forceRefresh}) ---`);
-  updateStatusBar('scanning', 'Scanning workspace files...');
-
-  const foundAgents: any[] = [];
-
-  for (const folder of folders) {
-    const rootPath = folder.uri.fsPath;
-    
-    // Look in common directories (.well-known/agent.json, public/.well-known/agent.json, and .creduent/agent.json)
-    const pathsToCheck = [
-      path.join(rootPath, '.well-known', 'agent.json'),
-      path.join(rootPath, 'public', '.well-known', 'agent.json'),
-      path.join(rootPath, '.creduent', 'agent.json'),
-      path.join(rootPath, 'agent.json')
-    ];
-
-    for (const filePath of pathsToCheck) {
-      if (fs.existsSync(filePath)) {
-        try {
-          outputChannel.appendLine(`Found agent identity configuration: ${filePath}`);
-          const content = fs.readFileSync(filePath, 'utf8');
-          const agentJson = JSON.parse(content);
-          
-          if (!agentJson.agent_id) {
-            outputChannel.appendLine('[Warning] agent.json missing required "agent_id" field.');
-            continue;
-          }
-
-          const verification = await verifyAgentAttestation(agentJson, forceRefresh);
-          foundAgents.push(verification);
-        } catch (err: any) {
-          outputChannel.appendLine(`[Error] Failed to read or parse ${filePath}: ${err.message}`);
-        }
-      }
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders) {
+        updateStatusBar("none", "No workspace folders open.");
+        return;
     }
-  }
 
-  if (foundAgents.length === 0) {
-    outputChannel.appendLine('No agent identity records (.well-known/agent.json) found in workspace.');
-    updateStatusBar('none', 'No agents found');
-    agentTreeProvider.refresh([]);
-    return;
-  }
+    outputChannel.appendLine(`--- Initiating Agent Attestation Scan (Force Refresh: ${forceRefresh}) ---`);
+    updateStatusBar("scanning", "Scanning workspace files...");
 
-  // Update tree view with all verified agents
-  agentTreeProvider.refresh(foundAgents);
+    const foundAgents: any[] = [];
 
-  // Set general status based on highest warning severity found
-  let finalStatus = 'trusted';
-  let statusMessage = 'All agents verified.';
+    for (const folder of folders) {
+        const rootPath = folder.uri.fsPath;
 
-  if (foundAgents.some(a => a.status === 'revoked')) {
-    finalStatus = 'revoked';
-    statusMessage = 'Revoked agent identity detected!';
-  } else if (foundAgents.some(a => a.status === 'unverified')) {
-    finalStatus = 'unverified';
-    statusMessage = 'Unverified agent signatures present.';
-  } else if (foundAgents.some(a => a.status === 'expired')) {
-    finalStatus = 'expired';
-    statusMessage = 'Expired attestation records present.';
-  } else if (foundAgents.every(a => a.status === 'verified')) {
-    finalStatus = 'verified';
-    statusMessage = 'Agents verified successfully.';
-  }
+        // Look in common directories (.well-known/agent.json, public/.well-known/agent.json, and .creduent/agent.json)
+        const pathsToCheck = [
+            path.join(rootPath, ".well-known", "agent.json"),
+            path.join(rootPath, "public", ".well-known", "agent.json"),
+            path.join(rootPath, ".creduent", "agent.json"),
+            path.join(rootPath, "agent.json"),
+        ];
 
-  updateStatusBar(finalStatus, statusMessage);
-  outputChannel.appendLine(`Scan complete. Overall state: ${finalStatus.toUpperCase()}`);
+        for (const filePath of pathsToCheck) {
+            if (fs.existsSync(filePath)) {
+                try {
+                    outputChannel.appendLine(`Found agent identity configuration: ${filePath}`);
+                    const content = fs.readFileSync(filePath, "utf8");
+                    const agentJson = JSON.parse(content);
+
+                    if (!agentJson.agent_id) {
+                        outputChannel.appendLine('[Warning] agent.json missing required "agent_id" field.');
+                        continue;
+                    }
+
+                    const verification = await verifyAgentAttestation(agentJson, forceRefresh);
+                    foundAgents.push(verification);
+                } catch (err: any) {
+                    outputChannel.appendLine(`[Error] Failed to read or parse ${filePath}: ${err.message}`);
+                }
+            }
+        }
+    }
+
+    if (foundAgents.length === 0) {
+        outputChannel.appendLine("No agent identity records (.well-known/agent.json) found in workspace.");
+        updateStatusBar("none", "No agents found");
+        agentTreeProvider.refresh([]);
+        return;
+    }
+
+    // Update tree view with all verified agents
+    agentTreeProvider.refresh(foundAgents);
+
+    // Set general status based on highest warning severity found
+    let finalStatus = "trusted";
+    let statusMessage = "All agents verified.";
+
+    if (foundAgents.some((a) => a.status === "revoked")) {
+        finalStatus = "revoked";
+        statusMessage = "Revoked agent identity detected!";
+    } else if (foundAgents.some((a) => a.status === "unverified")) {
+        finalStatus = "unverified";
+        statusMessage = "Unverified agent signatures present.";
+    } else if (foundAgents.some((a) => a.status === "expired")) {
+        finalStatus = "expired";
+        statusMessage = "Expired attestation records present.";
+    } else if (foundAgents.every((a) => a.status === "verified")) {
+        finalStatus = "verified";
+        statusMessage = "Agents verified successfully.";
+    }
+
+    updateStatusBar(finalStatus, statusMessage);
+    outputChannel.appendLine(`Scan complete. Overall state: ${finalStatus.toUpperCase()}`);
 }
 
 /**
  * Validates agent metadata against the registry and verifies signatures locally.
  */
 async function verifyAgentAttestation(agentJson: any, forceRefresh = false): Promise<any> {
-  const agentId = agentJson.agent_id;
-  const config = vscode.workspace.getConfiguration('identabar');
-  const registryUrl = config.get<string>('registryUrl', 'https://creduent.idevsec.com');
+    const agentId = agentJson.agent_id;
+    const config = vscode.workspace.getConfiguration("identabar");
+    const registryUrl = config.get<string>("registryUrl", "https://creduent.idevsec.com");
 
-  // Check memory cache first
-  if (!forceRefresh && attestationCache.has(agentId)) {
-    outputChannel.appendLine(`[Cache Hit] Using cached attestation for ${agentId}`);
-    return attestationCache.get(agentId);
-  }
-
-  const result: any = {
-    agentId,
-    owner: agentJson.owner || 'Unknown',
-    capabilities: agentJson.capabilities || [],
-    status: 'unverified',
-    message: 'Attestation verification failed.',
-    domain: '',
-    endpoint: ''
-  };
-
-  try {
-    outputChannel.appendLine(`Verifying agent identity via registry: ${registryUrl}`);
-    const validation = await verification.fetchAndVerifyRegistryAttestation(agentId, registryUrl);
-    
-    result.status = validation.status;
-    result.message = validation.message;
-    
-    if (validation.attestation) {
-      result.owner = validation.attestation.owner || result.owner;
-      result.capabilities = validation.attestation.capabilities || result.capabilities;
-      result.domain = validation.attestation.domain || '';
-      result.endpoint = validation.attestation.endpoint || '';
+    // Check memory cache first
+    if (!forceRefresh && attestationCache.has(agentId)) {
+        outputChannel.appendLine(`[Cache Hit] Using cached attestation for ${agentId}`);
+        return attestationCache.get(agentId);
     }
-  } catch (err: any) {
-    outputChannel.appendLine(`[Error] Verification process failed: ${err.message}`);
-    result.message = `Registry check error: ${err.message}`;
-  }
 
-  return cacheAndReturn(agentId, result);
+    const result: any = {
+        agentId,
+        owner: agentJson.owner || "Unknown",
+        capabilities: agentJson.capabilities || [],
+        status: "unverified",
+        message: "Attestation verification failed.",
+        domain: "",
+        endpoint: "",
+    };
+
+    try {
+        outputChannel.appendLine(`Verifying agent identity via registry: ${registryUrl}`);
+        const validation = await verification.fetchAndVerifyRegistryAttestation(agentId, registryUrl);
+
+        result.status = validation.status;
+        result.message = validation.message;
+
+        if (validation.attestation) {
+            result.owner = validation.attestation.owner || result.owner;
+            result.capabilities = validation.attestation.capabilities || result.capabilities;
+            result.domain = validation.attestation.domain || "";
+            result.endpoint = validation.attestation.endpoint || "";
+        }
+    } catch (err: any) {
+        outputChannel.appendLine(`[Error] Verification process failed: ${err.message}`);
+        result.message = `Registry check error: ${err.message}`;
+    }
+
+    return cacheAndReturn(agentId, result);
 }
 
 function cacheAndReturn(agentId: string, result: any): any {
-  attestationCache.set(agentId, result);
-  return result;
+    attestationCache.set(agentId, result);
+    return result;
 }
-
 
 /**
  * Updates status bar colors and icons based on validation results.
  */
 function updateStatusBar(status: string, message: string) {
-  statusBarItem.tooltip = `IdentaBar: ${message}`;
-  switch (status) {
-    case 'scanning':
-      statusBarItem.text = '$(sync~spin) IdentaBar: Auditing...';
-      statusBarItem.backgroundColor = undefined;
-      break;
-    case 'trusted':
-      statusBarItem.text = '$(verified-filled) IdentaBar: ★ TRUSTED';
-      statusBarItem.backgroundColor = undefined; // Default color
-      break;
-    case 'verified':
-      statusBarItem.text = '$(verified) IdentaBar: ✓ VERIFIED';
-      statusBarItem.backgroundColor = undefined;
-      break;
-    case 'expired':
-      statusBarItem.text = '$(warning) IdentaBar: ! EXPIRED';
-      statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-      break;
-    case 'revoked':
-      statusBarItem.text = '$(error) IdentaBar: ✕ REVOKED';
-      statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
-      break;
-    case 'unverified':
-      statusBarItem.text = '$(question) IdentaBar: ? UNVERIFIED';
-      statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-      break;
-    default:
-      statusBarItem.text = '$(shield) IdentaBar: Ready';
-      statusBarItem.backgroundColor = undefined;
-  }
+    statusBarItem.tooltip = `IdentaBar: ${message}`;
+    switch (status) {
+        case "scanning":
+            statusBarItem.text = "$(sync~spin) IdentaBar: Auditing...";
+            statusBarItem.backgroundColor = undefined;
+            break;
+        case "trusted":
+            statusBarItem.text = "$(verified-filled) IdentaBar: ★ TRUSTED";
+            statusBarItem.backgroundColor = undefined; // Default color
+            break;
+        case "verified":
+            statusBarItem.text = "$(verified) IdentaBar: ✓ VERIFIED";
+            statusBarItem.backgroundColor = undefined;
+            break;
+        case "expired":
+            statusBarItem.text = "$(warning) IdentaBar: ! EXPIRED";
+            statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
+            break;
+        case "revoked":
+            statusBarItem.text = "$(error) IdentaBar: ✕ REVOKED";
+            statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
+            break;
+        case "unverified":
+            statusBarItem.text = "$(question) IdentaBar: ? UNVERIFIED";
+            statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
+            break;
+        default:
+            statusBarItem.text = "$(shield) IdentaBar: Ready";
+            statusBarItem.backgroundColor = undefined;
+    }
 }
 
 // Tree view model provider
 class AgentTreeProvider implements vscode.TreeDataProvider<AgentTreeItem> {
-  private _onDidChangeTreeData: vscode.EventEmitter<AgentTreeItem | undefined | null | void> = new vscode.EventEmitter<AgentTreeItem | undefined | null | void>();
-  readonly onDidChangeTreeData: vscode.Event<AgentTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+    private _onDidChangeTreeData: vscode.EventEmitter<AgentTreeItem | undefined | null | void> =
+        new vscode.EventEmitter<AgentTreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<AgentTreeItem | undefined | null | void> =
+        this._onDidChangeTreeData.event;
 
-  private agents: any[] = [];
+    private agents: any[] = [];
 
-  refresh(agents: any[]): void {
-    this.agents = agents;
-    this._onDidChangeTreeData.fire();
-  }
-
-  getTreeItem(element: AgentTreeItem): vscode.TreeItem {
-    return element;
-  }
-
-  getChildren(element?: AgentTreeItem): Thenable<AgentTreeItem[]> {
-    if (element) {
-      if (element.contextValue === 'agent') {
-        const agent = this.agents.find(a => a.agentId === element.agentId);
-        if (!agent) { return Promise.resolve([]); }
-
-        const items = [
-          new AgentTreeItem('Status', agent.status.toUpperCase(), vscode.TreeItemCollapsibleState.None, 'status-attribute', agent.status, undefined, agent.agentId),
-          new AgentTreeItem('Owner', agent.owner, vscode.TreeItemCollapsibleState.None, 'attribute', undefined, 'organization', agent.agentId),
-          new AgentTreeItem('Domain', agent.domain || 'N/A', vscode.TreeItemCollapsibleState.None, 'attribute', undefined, 'globe', agent.agentId),
-          new AgentTreeItem('Endpoint', agent.endpoint || 'N/A', vscode.TreeItemCollapsibleState.None, 'attribute', undefined, 'cloud', agent.agentId)
-        ];
-
-        // Conditional display of message (only show on warnings/failures to keep layout clean)
-        if (agent.message && agent.status !== 'trusted' && agent.status !== 'verified') {
-          items.push(new AgentTreeItem('Message', agent.message, vscode.TreeItemCollapsibleState.None, 'message-attribute', undefined, 'warning', agent.agentId));
-        }
-
-        if (agent.capabilities && agent.capabilities.length > 0) {
-          items.push(new AgentTreeItem(
-            'Capabilities',
-            `(${agent.capabilities.length})`,
-            vscode.TreeItemCollapsibleState.Collapsed,
-            'capabilities-folder',
-            undefined,
-            'tag',
-            agent.agentId
-          ));
-        }
-
-        return Promise.resolve(items);
-      }
-
-      if (element.contextValue === 'capabilities-folder') {
-        const agent = this.agents.find(a => a.agentId === element.agentId);
-        if (!agent || !agent.capabilities) { return Promise.resolve([]); }
-        return Promise.resolve(
-          agent.capabilities.map((cap: string) => new AgentTreeItem(cap, '', vscode.TreeItemCollapsibleState.None, 'capability-item', undefined, 'circle-outline', element.agentId))
-        );
-      }
-
-      return Promise.resolve([]);
-    } else {
-      return Promise.resolve(
-        this.agents.map(a => {
-          // Display cleaner labels for agents (strip prefix schema)
-          const cleanLabel = a.agentId.replace('agent://', '');
-          const statusText = a.status.toUpperCase();
-          const desc = `${a.owner} • ${statusText}`;
-          return new AgentTreeItem(cleanLabel, desc, vscode.TreeItemCollapsibleState.Collapsed, 'agent', a.status, undefined, a.agentId);
-        })
-      );
+    refresh(agents: any[]): void {
+        this.agents = agents;
+        this._onDidChangeTreeData.fire();
     }
-  }
+
+    getTreeItem(element: AgentTreeItem): vscode.TreeItem {
+        return element;
+    }
+
+    getChildren(element?: AgentTreeItem): Thenable<AgentTreeItem[]> {
+        if (element) {
+            if (element.contextValue === "agent") {
+                const agent = this.agents.find((a) => a.agentId === element.agentId);
+                if (!agent) {
+                    return Promise.resolve([]);
+                }
+
+                const items = [
+                    new AgentTreeItem(
+                        "Status",
+                        agent.status.toUpperCase(),
+                        vscode.TreeItemCollapsibleState.None,
+                        "status-attribute",
+                        agent.status,
+                        undefined,
+                        agent.agentId
+                    ),
+                    new AgentTreeItem(
+                        "Owner",
+                        agent.owner,
+                        vscode.TreeItemCollapsibleState.None,
+                        "attribute",
+                        undefined,
+                        "organization",
+                        agent.agentId
+                    ),
+                    new AgentTreeItem(
+                        "Domain",
+                        agent.domain || "N/A",
+                        vscode.TreeItemCollapsibleState.None,
+                        "attribute",
+                        undefined,
+                        "globe",
+                        agent.agentId
+                    ),
+                    new AgentTreeItem(
+                        "Endpoint",
+                        agent.endpoint || "N/A",
+                        vscode.TreeItemCollapsibleState.None,
+                        "attribute",
+                        undefined,
+                        "cloud",
+                        agent.agentId
+                    ),
+                ];
+
+                // Conditional display of message (only show on warnings/failures to keep layout clean)
+                if (agent.message && agent.status !== "trusted" && agent.status !== "verified") {
+                    items.push(
+                        new AgentTreeItem(
+                            "Message",
+                            agent.message,
+                            vscode.TreeItemCollapsibleState.None,
+                            "message-attribute",
+                            undefined,
+                            "warning",
+                            agent.agentId
+                        )
+                    );
+                }
+
+                if (agent.capabilities && agent.capabilities.length > 0) {
+                    items.push(
+                        new AgentTreeItem(
+                            "Capabilities",
+                            `(${agent.capabilities.length})`,
+                            vscode.TreeItemCollapsibleState.Collapsed,
+                            "capabilities-folder",
+                            undefined,
+                            "tag",
+                            agent.agentId
+                        )
+                    );
+                }
+
+                return Promise.resolve(items);
+            }
+
+            if (element.contextValue === "capabilities-folder") {
+                const agent = this.agents.find((a) => a.agentId === element.agentId);
+                if (!agent || !agent.capabilities) {
+                    return Promise.resolve([]);
+                }
+                return Promise.resolve(
+                    agent.capabilities.map(
+                        (cap: string) =>
+                            new AgentTreeItem(
+                                cap,
+                                "",
+                                vscode.TreeItemCollapsibleState.None,
+                                "capability-item",
+                                undefined,
+                                "circle-outline",
+                                element.agentId
+                            )
+                    )
+                );
+            }
+
+            return Promise.resolve([]);
+        } else {
+            return Promise.resolve(
+                this.agents.map((a) => {
+                    // Display cleaner labels for agents (strip prefix schema)
+                    const cleanLabel = a.agentId.replace("agent://", "");
+                    const statusText = a.status.toUpperCase();
+                    const desc = `${a.owner} • ${statusText}`;
+                    return new AgentTreeItem(
+                        cleanLabel,
+                        desc,
+                        vscode.TreeItemCollapsibleState.Collapsed,
+                        "agent",
+                        a.status,
+                        undefined,
+                        a.agentId
+                    );
+                })
+            );
+        }
+    }
 }
 
 class AgentTreeItem extends vscode.TreeItem {
-  constructor(
-    label: string,
-    public readonly value: string,
-    public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    public readonly contextValue: string,
-    public readonly status?: string,
-    public readonly iconName?: string,
-    public readonly agentId?: string
-  ) {
-    super(label, collapsibleState);
-    this.tooltip = value ? `${label}: ${value}` : label;
-    this.description = value;
+    constructor(
+        label: string,
+        public readonly value: string,
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+        public readonly contextValue: string,
+        public readonly status?: string,
+        public readonly iconName?: string,
+        public readonly agentId?: string
+    ) {
+        super(label, collapsibleState);
+        this.tooltip = value ? `${label}: ${value}` : label;
+        this.description = value;
 
-    if (iconName) {
-      let iconColor: vscode.ThemeColor | undefined = undefined;
-      if (iconName === 'warning') {
-        iconColor = new vscode.ThemeColor('charts.orange');
-      } else if (iconName === 'globe') {
-        iconColor = new vscode.ThemeColor('charts.blue');
-      } else if (iconName === 'cloud') {
-        iconColor = new vscode.ThemeColor('charts.purple');
-      } else if (iconName === 'organization') {
-        iconColor = new vscode.ThemeColor('charts.green');
-      }
-      this.iconPath = new vscode.ThemeIcon(iconName, iconColor);
-    } else if (this.contextValue === 'agent') {
-      this.iconPath = this.getIconForStatus(this.status);
-    } else if (this.contextValue === 'status-attribute') {
-      this.iconPath = this.getIconForStatus(this.status);
+        if (iconName) {
+            let iconColor: vscode.ThemeColor | undefined = undefined;
+            if (iconName === "warning") {
+                iconColor = new vscode.ThemeColor("charts.orange");
+            } else if (iconName === "globe") {
+                iconColor = new vscode.ThemeColor("charts.blue");
+            } else if (iconName === "cloud") {
+                iconColor = new vscode.ThemeColor("charts.purple");
+            } else if (iconName === "organization") {
+                iconColor = new vscode.ThemeColor("charts.green");
+            }
+            this.iconPath = new vscode.ThemeIcon(iconName, iconColor);
+        } else if (this.contextValue === "agent") {
+            this.iconPath = this.getIconForStatus(this.status);
+        } else if (this.contextValue === "status-attribute") {
+            this.iconPath = this.getIconForStatus(this.status);
+        }
     }
-  }
 
-  private getIconForStatus(status?: string): vscode.ThemeIcon {
-    switch (status) {
-      case 'trusted':
-        return new vscode.ThemeIcon('verified-filled', new vscode.ThemeColor('charts.yellow'));
-      case 'verified':
-        return new vscode.ThemeIcon('verified', new vscode.ThemeColor('charts.blue'));
-      case 'expired':
-        return new vscode.ThemeIcon('warning', new vscode.ThemeColor('charts.orange'));
-      case 'revoked':
-        return new vscode.ThemeIcon('error', new vscode.ThemeColor('charts.red'));
-      case 'unverified':
-      default:
-        return new vscode.ThemeIcon('question', new vscode.ThemeColor('charts.gray'));
+    private getIconForStatus(status?: string): vscode.ThemeIcon {
+        switch (status) {
+            case "trusted":
+                return new vscode.ThemeIcon("verified-filled", new vscode.ThemeColor("charts.yellow"));
+            case "verified":
+                return new vscode.ThemeIcon("verified", new vscode.ThemeColor("charts.blue"));
+            case "expired":
+                return new vscode.ThemeIcon("warning", new vscode.ThemeColor("charts.orange"));
+            case "revoked":
+                return new vscode.ThemeIcon("error", new vscode.ThemeColor("charts.red"));
+            case "unverified":
+            default:
+                return new vscode.ThemeIcon("question", new vscode.ThemeColor("charts.gray"));
+        }
     }
-  }
 }
 
 /**
  * Prompts user to configure and generate a new signed agent.json and Ed25519 keypair.
  */
 async function createAgentIdentity() {
-  const folders = vscode.workspace.workspaceFolders;
-  if (!folders) {
-    vscode.window.showErrorMessage('Please open a workspace folder to initialize an agent identity.');
-    return;
-  }
+    const folders = vscode.workspace.workspaceFolders;
+    if (!folders) {
+        vscode.window.showErrorMessage("Please open a workspace folder to initialize an agent identity.");
+        return;
+    }
 
-  const agentId = await vscode.window.showInputBox({
-    prompt: 'Enter your Agent URI',
-    placeHolder: 'agent://yourorg/youragent',
-    validateInput: text => text.startsWith('agent://') ? null : 'URI must start with agent://'
-  });
-  if (!agentId) { return; }
-
-  const owner = await vscode.window.showInputBox({
-    prompt: 'Enter Owner Organization Name',
-    placeHolder: 'My Organization'
-  });
-  if (!owner) { return; }
-
-  const domain = await vscode.window.showInputBox({
-    prompt: 'Enter Domain associated with this agent identity',
-    placeHolder: 'myorg.com'
-  });
-  if (!domain) { return; }
-
-  const capabilities = await vscode.window.showInputBox({
-    prompt: 'Enter Capabilities (comma separated)',
-    value: 'task_execution'
-  });
-  if (capabilities === undefined) { return; }
-
-  try {
-    outputChannel.appendLine('[IdentaBar] Generating secure Ed25519 keypair...');
-    
-    // Generate Ed25519 keypair
-    const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519', {
-      publicKeyEncoding: { type: 'spki', format: 'pem' },
-      privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+    const agentId = await vscode.window.showInputBox({
+        prompt: "Enter your Agent URI",
+        placeHolder: "agent://yourorg/youragent",
+        validateInput: (text) => (text.startsWith("agent://") ? null : "URI must start with agent://"),
     });
-
-    // Extract raw public key bytes from SPKI (DER format starts with 12 bytes of alg OID header)
-    const publicKeyBuffer = crypto.createPublicKey(publicKey).export({ format: 'der', type: 'spki' });
-    const rawPublicKey = publicKeyBuffer.subarray(12);
-    const publicKeyStr = `ed25519:${rawPublicKey.toString('base64')}`;
-
-    // Construct metadata
-    const agentObj = {
-      version: '1.0',
-      issued_at: new Date().toISOString(),
-      agent_id: agentId,
-      owner: owner,
-      public_key: publicKeyStr,
-      endpoint: `https://${domain}/agent`,
-      capabilities: capabilities.split(',').map(c => c.trim()).filter(Boolean)
-    };
-
-    // Sign the canonical payload
-    const message = verification.canonicalize(agentObj);
-    const signature = crypto.sign(null, Buffer.from(message), privateKey);
-    const finalAgentJson = {
-      ...agentObj,
-      signature: signature.toString('base64')
-    };
-
-    // Save to workspace root
-    const rootPath = folders[0].uri.fsPath;
-    const creduentDir = path.join(rootPath, '.creduent');
-    if (!fs.existsSync(creduentDir)) {
-      fs.mkdirSync(creduentDir, { recursive: true });
+    if (!agentId) {
+        return;
     }
 
-    const agentJsonPath = path.join(creduentDir, 'agent.json');
-    const privateKeyPath = path.join(creduentDir, 'private.pem');
-
-    fs.writeFileSync(agentJsonPath, JSON.stringify(finalAgentJson, null, 2), 'utf8');
-    fs.writeFileSync(privateKeyPath, privateKey, { encoding: 'utf8', mode: 0o600 });
-
-    // Prompt user about gitignore safety
-    const gitignorePath = path.join(rootPath, '.gitignore');
-    let gitignoreUpdated = false;
-    let gitignoreContent = '';
-    if (fs.existsSync(gitignorePath)) {
-      gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
-    }
-    if (!gitignoreContent.includes('.creduent/private.pem')) {
-      gitignoreContent += '\n# IdentaBar private keys\n.creduent/private.pem\n';
-      fs.writeFileSync(gitignorePath, gitignoreContent, 'utf8');
-      gitignoreUpdated = true;
+    const owner = await vscode.window.showInputBox({
+        prompt: "Enter Owner Organization Name",
+        placeHolder: "My Organization",
+    });
+    if (!owner) {
+        return;
     }
 
-    vscode.window.showInformationMessage(
-      `Agent identity initialized! Metadata saved to .creduent/agent.json. Private key saved safely ${gitignoreUpdated ? '(automatically added to .gitignore)' : 'to .creduent/private.pem'}.`
-    );
-    outputChannel.appendLine(`[Success] Created identity for ${agentId}. Public Key: ${publicKeyStr}`);
-  } catch (err: any) {
-    vscode.window.showErrorMessage(`Failed to create agent identity: ${err.message}`);
-  }
+    const domain = await vscode.window.showInputBox({
+        prompt: "Enter Domain associated with this agent identity",
+        placeHolder: "myorg.com",
+    });
+    if (!domain) {
+        return;
+    }
+
+    const capabilities = await vscode.window.showInputBox({
+        prompt: "Enter Capabilities (comma separated)",
+        value: "task_execution",
+    });
+    if (capabilities === undefined) {
+        return;
+    }
+
+    try {
+        outputChannel.appendLine("[IdentaBar] Generating secure Ed25519 keypair...");
+
+        // Generate Ed25519 keypair
+        const { privateKey, publicKey } = crypto.generateKeyPairSync("ed25519", {
+            publicKeyEncoding: { type: "spki", format: "pem" },
+            privateKeyEncoding: { type: "pkcs8", format: "pem" },
+        });
+
+        // Extract raw public key bytes from SPKI (DER format starts with 12 bytes of alg OID header)
+        const publicKeyBuffer = crypto.createPublicKey(publicKey).export({ format: "der", type: "spki" });
+        const rawPublicKey = publicKeyBuffer.subarray(12);
+        const publicKeyStr = `ed25519:${rawPublicKey.toString("base64")}`;
+
+        // Construct metadata
+        const agentObj = {
+            version: "1.0",
+            issued_at: new Date().toISOString(),
+            agent_id: agentId,
+            owner: owner,
+            public_key: publicKeyStr,
+            endpoint: `https://${domain}/agent`,
+            capabilities: capabilities
+                .split(",")
+                .map((c) => c.trim())
+                .filter(Boolean),
+        };
+
+        // Sign the canonical payload
+        const message = verification.canonicalize(agentObj);
+        const signature = crypto.sign(null, Buffer.from(message), privateKey);
+        const finalAgentJson = {
+            ...agentObj,
+            signature: signature.toString("base64"),
+        };
+
+        // Save to workspace root
+        const rootPath = folders[0].uri.fsPath;
+        const creduentDir = path.join(rootPath, ".creduent");
+        if (!fs.existsSync(creduentDir)) {
+            fs.mkdirSync(creduentDir, { recursive: true });
+        }
+
+        const agentJsonPath = path.join(creduentDir, "agent.json");
+        const privateKeyPath = path.join(creduentDir, "private.pem");
+
+        fs.writeFileSync(agentJsonPath, JSON.stringify(finalAgentJson, null, 2), "utf8");
+        fs.writeFileSync(privateKeyPath, privateKey, { encoding: "utf8", mode: 0o600 });
+
+        // Prompt user about gitignore safety
+        const gitignorePath = path.join(rootPath, ".gitignore");
+        let gitignoreUpdated = false;
+        let gitignoreContent = "";
+        if (fs.existsSync(gitignorePath)) {
+            gitignoreContent = fs.readFileSync(gitignorePath, "utf8");
+        }
+        if (!gitignoreContent.includes(".creduent/private.pem")) {
+            gitignoreContent += "\n# IdentaBar private keys\n.creduent/private.pem\n";
+            fs.writeFileSync(gitignorePath, gitignoreContent, "utf8");
+            gitignoreUpdated = true;
+        }
+
+        vscode.window.showInformationMessage(
+            `Agent identity initialized! Metadata saved to .creduent/agent.json. Private key saved safely ${gitignoreUpdated ? "(automatically added to .gitignore)" : "to .creduent/private.pem"}.`
+        );
+        outputChannel.appendLine(`[Success] Created identity for ${agentId}. Public Key: ${publicKeyStr}`);
+    } catch (err: any) {
+        vscode.window.showErrorMessage(`Failed to create agent identity: ${err.message}`);
+    }
 }
 
 /**
  * Signs a workspace file using the local private key.
  */
 async function signFile(fileUri: vscode.Uri) {
-  if (!fileUri) {
-    vscode.window.showErrorMessage('No file selected to sign.');
-    return;
-  }
+    if (!fileUri) {
+        vscode.window.showErrorMessage("No file selected to sign.");
+        return;
+    }
 
-  const folders = vscode.workspace.workspaceFolders;
-  const privateKeyPath = findPrivateKey(folders);
+    const folders = vscode.workspace.workspaceFolders;
+    const privateKeyPath = findPrivateKey(folders);
 
-  if (!privateKeyPath) {
-    vscode.window.showErrorMessage('No private key found (.creduent/private.pem) in this workspace. Run "IdentaBar: Initialize Agent Identity" first.');
-    return;
-  }
+    if (!privateKeyPath) {
+        vscode.window.showErrorMessage(
+            'No private key found (.creduent/private.pem) in this workspace. Run "IdentaBar: Initialize Agent Identity" first.'
+        );
+        return;
+    }
 
-  try {
-    outputChannel.appendLine(`Signing file: ${fileUri.fsPath} using private key: ${privateKeyPath}`);
-    const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
-    const fileContent = fs.readFileSync(fileUri.fsPath);
+    try {
+        outputChannel.appendLine(`Signing file: ${fileUri.fsPath} using private key: ${privateKeyPath}`);
+        const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+        const fileContent = fs.readFileSync(fileUri.fsPath);
 
-    // Generate detached signature
-    const signature = crypto.sign(null, fileContent, privateKey);
-    const sigPath = `${fileUri.fsPath}.sig`;
-    fs.writeFileSync(sigPath, signature.toString('base64'), 'utf8');
+        // Generate detached signature
+        const signature = crypto.sign(null, fileContent, privateKey);
+        const sigPath = `${fileUri.fsPath}.sig`;
+        fs.writeFileSync(sigPath, signature.toString("base64"), "utf8");
 
-    vscode.window.showInformationMessage(`Signature successfully created: ${path.basename(sigPath)}`);
-    outputChannel.appendLine(`[Success] Detached signature generated at ${sigPath}`);
-  } catch (err: any) {
-    vscode.window.showErrorMessage(`Failed to sign file: ${err.message}`);
-  }
+        vscode.window.showInformationMessage(`Signature successfully created: ${path.basename(sigPath)}`);
+        outputChannel.appendLine(`[Success] Detached signature generated at ${sigPath}`);
+    } catch (err: any) {
+        vscode.window.showErrorMessage(`Failed to sign file: ${err.message}`);
+    }
 }
 
 /**
  * Searches the workspace for private.pem keys.
  */
 function findPrivateKey(folders: readonly vscode.WorkspaceFolder[] | undefined): string | null {
-  if (!folders) { return null; }
-  for (const folder of folders) {
-    const rootPath = folder.uri.fsPath;
-    const pathsToCheck = [
-      path.join(rootPath, '.creduent', 'private.pem'),
-      path.join(rootPath, 'private.pem')
-    ];
-    for (const p of pathsToCheck) {
-      if (fs.existsSync(p)) { return p; }
+    if (!folders) {
+        return null;
     }
-  }
-  return null;
+    for (const folder of folders) {
+        const rootPath = folder.uri.fsPath;
+        const pathsToCheck = [path.join(rootPath, ".creduent", "private.pem"), path.join(rootPath, "private.pem")];
+        for (const p of pathsToCheck) {
+            if (fs.existsSync(p)) {
+                return p;
+            }
+        }
+    }
+    return null;
 }

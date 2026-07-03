@@ -4,10 +4,10 @@ export function verifyRawEd25519(message: string, signatureB64: string, publicKe
 export function verifyEd25519Signature(data: any, signatureB64: string, publicKey: string): Promise<boolean>;
 
 export interface ValidationResult {
-  isValid: boolean;
-  status: 'verified' | 'trusted' | 'expired' | 'revoked' | 'unverified';
-  message: string;
-  attestation: any;
+    isValid: boolean;
+    status: "verified" | "trusted" | "expired" | "revoked" | "unverified";
+    message: string;
+    attestation: any;
 }
 
 export function fetchAndVerifyRegistryAttestation(agentId: string, registryUrl: string): Promise<ValidationResult>;
