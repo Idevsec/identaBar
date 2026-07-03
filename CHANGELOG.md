@@ -5,6 +5,15 @@ All notable changes to the IdentaBar project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-07-04
+
+### Added
+- **Community Standardization Guides:** Created `CODE_OF_CONDUCT.md`, `SECURITY.md`, and `CONTRIBUTING.md`.
+- **Editor & Formatting Rules:** Configured `.editorconfig` (spaces, LF, trim trailing whitespaces) and `.prettierrc` for consistent formatting.
+- **Pre-commit Guards & Workflows:** Added `.pre-commit-config.yaml` with Prettier checks and created `.github/workflows/auto-format.yml` to automate style corrections on push/PRs.
+- **Repository Metadata Gatekeepers:** Added `.github/CODEOWNERS` requesting reviews from `@cyberfascinate`, along with pull request and issue templates.
+- **Agent Instructions:** Created `agent.md` providing system instructions for AI coding assistants.
+
 ## [1.2.0] - 2026-06-30
 
 ### Added
