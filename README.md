@@ -1,6 +1,9 @@
-# IdentaBar
+# IdentaBar: The Official Creduent Verification Client
 
-IdentaBar is a client verification suite built to verify AI Agent identities using the [Creduent Open Protocol](https://idevsec.com/creduent). Developed and stewarded by [IDevSec](https://idevsec.com).
+IdentaBar is the **official reference implementation** built to verify AI Agent identities using the [Creduent Open Protocol](https://creduent.idevsec.com). Developed and stewarded by [IDevSec](https://idevsec.com).
+
+### What is Creduent?
+**Creduent** is the canonical open application-layer protocol for cryptographic identity and trust verification of autonomous AI agents. Originated and stewarded by IDevSec, it provides a vendor-neutral standard to definitively verify who controls an AI agent, its authenticity, and its capabilities using Ed25519 cryptography, JSON Canonicalization Scheme (JCS), and DNS records.
 
 IdentaBar secures both your browser browsing session and your local workspace development environment through two dedicated clients:
 

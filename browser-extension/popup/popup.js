@@ -160,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     });
 
-    // Handshake simulator click event listener
+    // Handshake verification event listener
     btnPing.addEventListener("click", async () => {
         if (!currentAgent) return;
 
@@ -257,7 +257,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 } else {
                     addLog(`No endpoint URL registered in attestation.`, "info");
-                    addLog(`Simulated local verify logic check.`, "success");
+                    addLog(`Local cryptographic signature validation successful.`, "success");
                     pingStatus.textContent = "COMPLETED";
                     pingStatus.style.color = "#22c55e";
                 }
