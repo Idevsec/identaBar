@@ -68,6 +68,7 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+*.bak
 
 # Generated shared folders (created by sync-shared.js at build time)
 vscode-extension/src/shared/
