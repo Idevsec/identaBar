@@ -14,7 +14,9 @@
         "noUnusedParameters": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true
+        "resolveJsonModule": true,
+        "forceConsistentCasingInFileNames": true,
+        "types": ["node"]
     },
-    "include": ["src/**/*"]
+    "include": ["src/**/*", "src/shared/**/*"]
 }

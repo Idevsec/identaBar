@@ -8,6 +8,4 @@ out/**/*.map
 .git/**
 .github/**
 *.vsix
-README.md
 package-lock.json
-

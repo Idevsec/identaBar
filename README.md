@@ -1,71 +1,69 @@
 # IdentaBar: The Official Creduent Verification Client
 
-IdentaBar is the **official reference implementation** built to verify AI Agent identities using the [Creduent Open Protocol](https://creduent.idevsec.com). Developed and stewarded by [IDevSec](https://idevsec.com).
+IdentaBar is the official reference implementation for verifying AI agent identities using the [Creduent Open Protocol](https://creduent.idevsec.com). Developed and stewarded by [IDevSec](https://idevsec.com).
 
-### What is Creduent?
-**Creduent** is the canonical open application-layer protocol for cryptographic identity and trust verification of autonomous AI agents. Originated and stewarded by IDevSec, it provides a vendor-neutral standard to definitively verify who controls an AI agent, its authenticity, and its capabilities using Ed25519 cryptography, JSON Canonicalization Scheme (JCS), and DNS records.
+## What is Creduent?
 
-IdentaBar secures both your browser browsing session and your local workspace development environment through two dedicated clients:
+Creduent is the canonical open application-layer protocol for cryptographic identity and trust verification of autonomous AI agents. Originated and stewarded by IDevSec, it provides a vendor-neutral standard to definitively verify who controls an AI agent, its authenticity, and its declared capabilities using Ed25519 cryptography, the JSON Canonicalization Scheme (JCS/RFC 8785), and DNS records.
+
+IdentaBar secures both browser sessions and local development environments through two dedicated clients.
 
 ---
 
-## Directory Overview
+## Repository Structure
 
 This repository is organized as a monorepo:
 
-### 1. [`shared/`](./shared/)
+### `shared/`
 
-- **What it is:** The core cryptographic verification module shared between both clients.
-- **How it syncs:** Run `node sync-shared.js` at the root. In local development, it creates directory symlinks/junctions for real-time hot-reloading. In CI/production builds, it copies files recursively.
+The core cryptographic verification module shared between both clients. Contains JCS canonicalization, Ed25519 signature validation, and registry attestation retrieval logic.
 
-### 2. [`browser-extension/`](./browser-extension/README.md)
+Run `node sync-shared.js` at the root to sync the module. In local development, it creates directory junctions or symlinks for hot-reloading. In CI and production builds, it performs a recursive file copy.
 
-- **What it is:** A Manifest V3 web extension for Google Chrome, Microsoft Edge, Brave, Opera, and Mozilla Firefox (109+).
-- **What it does:** Automatically scans domains you visit for agent identity configurations, resolves attestation certificates from the registry, and displays real-time trust badges (`★`, `✓`, `!`, `✕`, `?`) in your browser toolbar. Includes an advanced DevTools verification playground.
+### `browser-extension/`
 
-### 3. [`vscode-extension/`](./vscode-extension/README.md)
+A Manifest V3 web extension for Google Chrome, Microsoft Edge, Brave, Opera, and Mozilla Firefox (109+).
 
-- **What it is:** A desktop integration extension for Visual Studio Code.
-- **What it does:** Scans workspace folders for agent files, performs local Ed25519 signature checks, displays trust ratings in the status bar, and provides a custom side panel view showing agent credentials and permissions.
+Automatically scans visited domains for agent identity configurations, resolves attestation records from the registry, and displays real-time trust badges in the browser toolbar. Includes a DevTools verification playground.
 
----
+Available on: [Mozilla Add-ons](https://addons.mozilla.org/en-US/firefox/addon/identabar/) | Chrome Web Store (pending review) | Microsoft Edge Add-ons (pending review)
 
-## Verification Logic (How it Works)
+### `vscode-extension/`
 
-Both clients follow the same zero-dependency cryptographic flow:
+A desktop integration extension for Visual Studio Code and VSCodium.
 
-1. **Resolution**: Detects agent metadata declarations (`agent.json`).
-2. **Registry Fetch**: Connects to the registry resolver at `https://creduent.idevsec.com` to fetch the agent's JCS attestation token.
-3. **Local Validation**: Downloads the official verification public key once and verifies the document signature locally using native Web Crypto (in browsers) or the native `crypto` module (in VS Code).
-4. **Enforcement**: Validates revocation status and expiration limits (`valid_until` / `expires_at`), updating the visual trust badges accordingly.
+Scans workspace folders for `agent.json` files, performs local Ed25519 signature verification, and displays trust status in the status bar. Provides a multi-section sidebar with four views: Workspace Agents, Detected Frameworks, Registries, and Help and Feedback. Enables one-click keypair generation and live agent registration directly to the Creduent registry from inside the IDE.
+
+Available on: [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=IDevSec.identabar) | [Open VSX Registry](https://open-vsx.org/extension/IDevSec/identabar)
 
 ---
 
-## Browser & IDE Support
+## Verification Flow
 
-- **Browsers**: Firefox 109+ (available on [Mozilla Add-ons](https://addons.mozilla.org/en-US/firefox/addon/identabar/)), Chrome & Edge (coming soon, currently in store review), Brave, Opera.
-- **IDEs**: VS Code & VSCodium (available on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=idevsec.identabar) and the [Open VSX Registry](https://open-vsx.org/extension/IDevSec/identabar)).
+Both clients follow the same zero-dependency cryptographic verification process:
+
+1. **Resolution:** Detects agent metadata declarations via `agent.json` files or `.well-known/agent.json` discovery.
+2. **Registry Fetch:** Connects to the resolver at `https://creduent.idevsec.com` to retrieve the agent's JCS attestation record.
+3. **Local Validation:** Verifies the document signature locally using the native Web Crypto API in browsers or the native `crypto` module in VS Code. No data leaves the client.
+4. **Enforcement:** Validates revocation status and expiration timestamps (`valid_until` / `expires_at`) and updates trust indicators accordingly.
+
+---
+
+## Platform Support
+
+- **Browsers:** Firefox 109+ (live), Chrome and Edge (under store review), Brave, Opera
+- **IDEs:** VS Code and VSCodium (v1.74.0 and above)
 
 ---
 
 ## Technical Specifications
 
-- **License:** Apache 2.0 (includes patent protection rights)
+- **License:** Apache 2.0 (includes patent grant)
 - **Cryptography:** Ed25519 signatures
-- **Canonicalization:** JCS - JSON Canonicalization Scheme (RFC 8785)
-- **Security:** 100% client-side verification, zero data tracking or storage logs
-
----
-
-## Security & Robustness Guarantees
-
-IdentaBar clients implement strict safety and cryptographic validation measures:
-
-- **Correct Ed25519 Checking:** Employs raw Node.js `crypto.verify` (and Web Crypto API in browser engines) instead of hash-based streams to directly check Ed25519/EdDSA signature fields.
-- **Canonical JCS Standardization:** Serializes documents using RFC 8785 JSON Canonicalization Scheme (JCS) before signing or verifying to guarantee payload format consistency.
-- **Race Condition Prevention:** Integrates strict task gating at startup in the VS Code extension to block tasks if workspace initialization has not fully completed.
-- **Secure File Permissions:** Enforces Unix `0o600` (read/write by owner only) permissions when writing private keys to local storage to prevent key compromise.
-- **HTTP request timeouts:** Cares for connection issues by enforcing a strict 5-second timeout on all outbound requests to the attestation registry to prevent app lockups.
+- **Canonicalization:** JSON Canonicalization Scheme - RFC 8785
+- **Key Storage:** 0o600 owner-only file permissions for private keys
+- **Network:** 5-second timeout on all outbound registry requests
+- **Verification:** 100% client-side - no telemetry, no data collection
 
 ---
 

@@ -1,11 +1,11 @@
 <h1 align="center">IdentaBar Client for VS Code</h1>
 
 <p align="center">
-  <strong>Cryptographic AI Agent attestation and identity verifier built directly into VS Code, implementing the Creduent identity protocol.</strong>
+  <strong>Cryptographic AI agent attestation and identity verifier built directly into VS Code, implementing the Creduent identity protocol.</strong>
 </p>
 
 <p align="center">
-  <a href="https://marketplace.visualstudio.com/items?itemName=idevsec.identabar">Visual Studio Marketplace</a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=IDevSec.identabar">Visual Studio Marketplace</a>
   &nbsp;&bull;&nbsp;
   <a href="https://open-vsx.org/extension/IDevSec/identabar">Open VSX Registry</a>
 </p>
@@ -14,81 +14,76 @@
 
 ## Features
 
-- **Real-Time Workspace Watching**: Listens to workspace file events in real-time. Any changes, additions, or deletions of `agent.json` files automatically trigger a workspace re-verification.
-- **Live Registry Refresh**: Manual scans and real-time triggers automatically bypass the memory cache and pull live attestation status directly from the registry server to reflect registry-side trust level changes immediately.
-- **Dynamic Status Bar Badge**: Displays the current workspace trust rating in the status bar:
-    - `★ TRUSTED` (Gold) - Verified enterprise entity
-    - `✓ VERIFIED` (Cyan) - Cryptographically validated keys & records
-    - `! EXPIRED` (Amber) - Expired attestation certificate
-    - `✕ REVOKED` (Red) - Identity revoked by the registry
-    - `? UNVERIFIED` (Gray) - Signature mismatch or invalid metadata
-- **Local Ed25519 Cryptographic Verification**: Resolves key signatures and performs verification locally using Node.js's native `crypto` module (zero external library dependencies).
-- **Zero-Trust Task Gating**: Intercepts active VS Code task executions. If `identabar.attestationStrictness` is set to `strict`, task execution is immediately blocked if any unverified or revoked agent keys are active in the workspace.
-- **Identity Initialization Wizard**: Generates a local Ed25519 keypair, canonicalizes/signs metadata, creates `.creduent/agent.json`, and automatically appends the private key to `.gitignore` for safety.
-- **Detached File Signing**: Explorer context menu command to generate a detached signature file (`.sig`) of any script or config file in the workspace.
-- **Premium Workspace Explorer Panel**: Redesigned tree explorer displaying:
-    - Clean namespace IDs (e.g. `idevsec/steward`) with combined owner and status description tags.
-    - Dedicated codicons and colors (e.g., green `organization` icon, blue `globe` icon for Domain, purple `cloud` icon for Endpoint).
-    - A collapsible `Capabilities` folder with individual sub-items.
-    - Clean layout: conditional warning/error messaging shown only if verification fails.
-- **Detailed Output Channel**: Logs all network queries, validation steps, public key fetches, and signature validation details to a dedicated `IdentaBar` Output Channel.
+- **Multi-Section Sidebar Explorer:** The IdentaBar activity bar panel is organized into four dedicated views: Workspace Agents, Detected Frameworks, Registries, and Help and Feedback.
+- **AI Framework Detection:** Automatically scans `package.json`, `requirements.txt`, and `pyproject.toml` at workspace open to detect AI agent frameworks including Langchain, CrewAI, AutoGen, LlamaIndex, Semantic Kernel, OpenAI Agents SDK, Anthropic, Google Generative AI, and Haystack.
+- **One-Click Agent Registration:** Inline action button on each detected framework item auto-generates an Ed25519 keypair and publishes the agent identity directly to the Creduent registry without leaving the IDE.
+- **Real-Time Workspace Watching:** Listens to workspace file system events. Any changes, additions, or deletions of `agent.json` files trigger automatic re-verification.
+- **Live Registry Refresh:** Manual scans and real-time triggers bypass the memory cache and pull live attestation status directly from the registry to reflect trust level changes immediately.
+- **Dynamic Status Bar Badge:** Displays the current workspace trust rating in the status bar:
+    - `TRUSTED` (Gold) - Verified enterprise entity
+    - `VERIFIED` (Cyan) - Cryptographically validated keys and records
+    - `EXPIRED` (Amber) - Expired attestation certificate
+    - `REVOKED` (Red) - Identity revoked by the registry
+    - `UNVERIFIED` (Gray) - Signature mismatch or invalid metadata
+- **Local Ed25519 Cryptographic Verification:** Resolves key signatures and performs verification locally using Node.js native `crypto` module with zero external library dependencies.
+- **Zero-Trust Task Gating:** When `identabar.attestationStrictness` is set to `strict`, task execution is blocked if any unverified or revoked agent keys are active in the workspace.
+- **Identity Initialization Wizard:** Generates a local Ed25519 keypair, canonicalizes and signs metadata via RFC 8785 JCS, creates `.creduent/agent.json`, and automatically appends the private key to `.gitignore`.
+- **Detached File Signing:** Explorer context menu command to generate a `.sig` signature file for any script or config file in the workspace using the agent private key.
+- **Detailed Output Channel:** Logs all network queries, validation steps, public key fetches, and signature validation results to a dedicated `IdentaBar` Output Channel.
 
 ---
 
 ## Configuration Settings
 
-You can customize the extension via VS Code settings (`ctrl+,`):
+Configure the extension via VS Code Settings (`Ctrl+,`):
 
-| Setting                             | Default                        | Description                                                                                                                                      |
-| ----------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `identabar.registryUrl`             | `https://creduent.idevsec.com` | Custom endpoint for your Creduent registry resolver.                                                                                             |
-| `identabar.enableAutomaticScanning` | `true`                         | Scans workspace directories on startup.                                                                                                          |
-| `identabar.attestationStrictness`   | `standard`                     | Strictness policy: `strict` (block tasks on unverified agent detection), `standard` (warn on missing/expired credentials), `lax` (logging only). |
+| Setting | Default | Description |
+| --- | --- | --- |
+| `identabar.registryUrl` | `https://creduent.idevsec.com` | Endpoint for the Creduent registry resolver. |
+| `identabar.enableAutomaticScanning` | `true` | Scans workspace directories on startup. |
+| `identabar.attestationStrictness` | `standard` | `strict` blocks tasks on unverified agents; `standard` warns on missing or expired credentials; `lax` logs only. |
 
 ---
 
 ## Available Commands
 
-Open the command palette (`ctrl+shift+p` or `cmd+shift+p`) to run:
+Open the command palette (`Ctrl+Shift+P`) and type `IdentaBar` to access:
 
-- `IdentaBar: Verify Workspace Agents` - Triggers a manual scan, bypasses attestation caches, and updates badges/explorer view.
+- `IdentaBar: Verify Workspace Agents` - Manual scan, bypasses attestation cache, updates badges and sidebar.
 - `IdentaBar: Clear Attestation Cache` - Purges the resolved identity memory cache and resets status indicators.
-- `IdentaBar: Initialize Agent Identity` - Launches key generator wizard and generates `.creduent/agent.json` and `private.pem`.
-- `IdentaBar: Sign File with Agent Key` - (Also available via File Explorer context menu) Generates a `.sig` signature for the selected file using the workspace private key.
+- `IdentaBar: Initialize Agent Identity` - Launches the key generation wizard, creates `.creduent/agent.json` and `private.pem`.
+- `IdentaBar: Sign File with Agent Key` - Also available via the File Explorer context menu. Generates a `.sig` signature for the selected file.
 
 ---
 
-## Troubleshooting: Local Development Signature Verification
+## Troubleshooting: Signature Verification Against a Local Registry
 
-If you are running the registry server locally (`http://localhost:3000`) and the extension reports `Attestation signature validation failed.`, this happens because:
+If you are running the registry server locally (`http://localhost:3000`) and the extension reports `Attestation signature validation failed`, this occurs because:
 
-1. Your local dev registry uses the production Upstash Redis database, which contains attestations signed by the **production private key**.
-2. When the extension fetches the public key from `http://localhost:3000/public-key`, it receives the **local development public key** (`registry_public_key.pem`).
+1. Your local development registry uses the production database, which contains attestations signed by the production private key.
+2. When the extension fetches the public key from `http://localhost:3000/public-key`, it receives the local development public key.
 3. Cryptographic verification fails due to the key mismatch.
 
-**Solution:**
-
-- To test locally with production data, copy the production registry public key string to your local environment configurations (`CREDUENT_REGISTRY_PUBKEY`).
-- Alternatively, keep `identabar.registryUrl` configured to `https://creduent.idevsec.com` in VS Code settings.
+**Solution:** Set `identabar.registryUrl` in VS Code settings to `https://creduent.idevsec.com`, or copy the production public key string into your local registry environment configuration (`CREDUENT_REGISTRY_PUBKEY`).
 
 ---
 
-## Developer Installation (Manual Build)
+## Developer Build Instructions
 
-To build and run the extension locally in VS Code:
+To build and run the extension locally:
 
 1. Clone the repository and navigate to the `vscode-extension/` directory.
 2. Install compilation dependencies:
-    ```bash
+    ```
     npm install
     ```
-3. Compile the TypeScript code (this automatically runs `sync-shared.js` to link the shared core verification module to `src/shared/`):
-    ```bash
+3. Compile the TypeScript source. This automatically runs `sync-shared.js` to copy the shared cryptographic module into `src/shared/` and `out/shared/`:
+    ```
     npm run compile
     ```
-4. Press `F5` in VS Code to launch a new **Extension Development Host** session and run the extension live.
-5. Pack the extension into a `.vsix` file (this automatically copies the shared verification files in release/prepublish mode):
-    ```bash
+4. Open the `vscode-extension/` folder in VS Code and press `F5` to launch an Extension Development Host session.
+5. To package a `.vsix` file for manual installation or distribution:
+    ```
     npx @vscode/vsce package
     ```
 

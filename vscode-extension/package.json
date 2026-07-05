@@ -2,7 +2,7 @@
     "name": "identabar",
     "displayName": "IdentaBar Client for VS Code",
     "description": "Cryptographic AI Agent identity verifier and attestation gatekeeper using the Creduent protocol.",
-    "version": "1.0.4",
+    "version": "1.1.0",
     "publisher": "IDevSec",
     "license": "Apache-2.0",
     "icon": "resources/icon.png",
@@ -40,12 +40,44 @@
                 "command": "identabar.signFile",
                 "title": "IdentaBar: Sign File with Agent Key",
                 "category": "IdentaBar"
+            },
+            {
+                "command": "identabar.registerDetectedAgent",
+                "title": "Register on Creduent",
+                "icon": "$(add)",
+                "category": "IdentaBar"
+            },
+            {
+                "command": "identabar.configureRegistry",
+                "title": "Configure Registry URL",
+                "icon": "$(settings-gear)",
+                "category": "IdentaBar"
+            },
+            {
+                "command": "identabar.openDocs",
+                "title": "Read Creduent Documentation",
+                "icon": "$(book)",
+                "category": "IdentaBar"
             }
         ],
         "menus": {
             "explorer/context": [
                 {
                     "command": "identabar.signFile",
+                    "group": "navigation"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "identabar.registerDetectedAgent",
+                    "when": "viewItem == detected-framework",
+                    "group": "inline"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "identabar.configureRegistry",
+                    "when": "view == identabar.registriesView",
                     "group": "navigation"
                 }
             ]
@@ -90,17 +122,32 @@
                     "id": "identabar.agentsView",
                     "name": "Workspace Agents",
                     "icon": "resources/icon.svg"
+                },
+                {
+                    "id": "identabar.frameworksView",
+                    "name": "Detected Frameworks",
+                    "icon": "resources/icon.svg"
+                },
+                {
+                    "id": "identabar.registriesView",
+                    "name": "Registries",
+                    "icon": "resources/icon.svg"
+                },
+                {
+                    "id": "identabar.helpView",
+                    "name": "Help and Feedback",
+                    "icon": "resources/icon.svg"
                 }
             ]
         }
     },
     "scripts": {
-        "vscode:prepublish": "node ../sync-shared.js --copy && npm run compile",
-        "compile": "node ../sync-shared.js && tsc -p ./",
-        "watch": "node ../sync-shared.js && tsc -watch -p ./"
+        "vscode:prepublish": "node ../sync-shared.js --copy && tsc -p ./ && node -e \"const fs=require('fs');fs.mkdirSync('out/shared',{recursive:true});fs.readdirSync('../shared').forEach(f=>fs.copyFileSync('../shared/'+f,'out/shared/'+f))\"",
+        "compile": "node ../sync-shared.js --copy && tsc -p ./ && node -e \"const fs=require('fs');fs.mkdirSync('out/shared',{recursive:true});fs.readdirSync('../shared').forEach(f=>fs.copyFileSync('../shared/'+f,'out/shared/'+f))\"",
+        "watch": "node ../sync-shared.js --copy && tsc -watch -p ./"
     },
     "devDependencies": {
-        "@types/node": "^26.1.0",
+        "@types/node": "^20.19.43",
         "@types/vscode": "^1.74.0",
         "typescript": "^6.0.3"
     }

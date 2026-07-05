@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as crypto from "crypto";
 import * as path from "path";
 import * as fs from "fs";
+import * as https from "https";
 import * as verification from "./shared/verification";
 
 // Ephemeral cache to store resolved attestation documents in memory
@@ -11,6 +12,9 @@ const attestationCache = new Map<string, any>();
 let outputChannel: vscode.OutputChannel;
 let statusBarItem: vscode.StatusBarItem;
 let agentTreeProvider: AgentTreeProvider;
+let frameworksProvider: FrameworksProvider;
+let registriesProvider: RegistriesProvider;
+let helpProvider: HelpProvider;
 
 export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel("IdentaBar");
@@ -24,9 +28,15 @@ export function activate(context: vscode.ExtensionContext) {
     statusBarItem.show();
     context.subscriptions.push(statusBarItem);
 
-    // Register Sidebar Tree Provider
+    // Register Sidebar Tree Providers
     agentTreeProvider = new AgentTreeProvider();
+    frameworksProvider = new FrameworksProvider();
+    registriesProvider = new RegistriesProvider();
+    helpProvider = new HelpProvider();
     vscode.window.registerTreeDataProvider("identabar.agentsView", agentTreeProvider);
+    vscode.window.registerTreeDataProvider("identabar.frameworksView", frameworksProvider);
+    vscode.window.registerTreeDataProvider("identabar.registriesView", registriesProvider);
+    vscode.window.registerTreeDataProvider("identabar.helpView", helpProvider);
 
     // Register task start listener for zero-trust gating
     context.subscriptions.push(
@@ -77,6 +87,24 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand("identabar.createAgentIdentity", async () => {
             await createAgentIdentity();
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand("identabar.registerDetectedAgent", async (item?: any) => {
+            await createAgentIdentity(item?.label);
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand("identabar.configureRegistry", async () => {
+            vscode.commands.executeCommand("workbench.action.openSettings", "identabar.registryUrl");
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand("identabar.openDocs", async () => {
+            vscode.env.openExternal(vscode.Uri.parse("https://github.com/idevsec/Creduent"));
         })
     );
 
@@ -162,6 +190,9 @@ async function runWorkspaceVerification(forceRefresh = false) {
             }
         }
     }
+
+    const detected = detectAIAgents(folders);
+    frameworksProvider.refresh(detected);
 
     if (foundAgents.length === 0) {
         outputChannel.appendLine("No agent identity records (.well-known/agent.json) found in workspace.");
@@ -475,11 +506,22 @@ class AgentTreeItem extends vscode.TreeItem {
 /**
  * Prompts user to configure and generate a new signed agent.json and Ed25519 keypair.
  */
-async function createAgentIdentity() {
+async function createAgentIdentity(detectedFramework?: string) {
     const folders = vscode.workspace.workspaceFolders;
     if (!folders) {
         vscode.window.showErrorMessage("Please open a workspace folder to initialize an agent identity.");
         return;
+    }
+
+    let defaultCapabilities = "task_execution";
+    if (detectedFramework) {
+        const wantsToRegister = await vscode.window.showInformationMessage(
+            `🤖 AI Framework (${detectedFramework}) detected! Do you want to generate a trusted Creduent identity?`,
+            "Register Agent", "Cancel"
+        );
+        if (wantsToRegister !== "Register Agent") return;
+        if (detectedFramework.toLowerCase().includes("langchain")) defaultCapabilities = "chain_execution,rag";
+        else if (detectedFramework.toLowerCase().includes("crewai")) defaultCapabilities = "multi_agent_orchestration";
     }
 
     const agentId = await vscode.window.showInputBox({
@@ -509,7 +551,7 @@ async function createAgentIdentity() {
 
     const capabilities = await vscode.window.showInputBox({
         prompt: "Enter Capabilities (comma separated)",
-        value: "task_execution",
+        value: defaultCapabilities,
     });
     if (capabilities === undefined) {
         return;
@@ -581,6 +623,57 @@ async function createAgentIdentity() {
             `Agent identity initialized! Metadata saved to .creduent/agent.json. Private key saved safely ${gitignoreUpdated ? "(automatically added to .gitignore)" : "to .creduent/private.pem"}.`
         );
         outputChannel.appendLine(`[Success] Created identity for ${agentId}. Public Key: ${publicKeyStr}`);
+
+        // Prompt to register on live registry
+        const publishAction = await vscode.window.showInformationMessage(
+            "Do you want to publish this identity to the Creduent Public Registry now?",
+            "Yes, Publish", "No, keep local"
+        );
+        
+        if (publishAction === "Yes, Publish") {
+            const config = vscode.workspace.getConfiguration("identabar");
+            const registryUrl = config.get<string>("registryUrl", "https://creduent.idevsec.com");
+            const registerEndpoint = `${registryUrl}/registry/register`;
+            
+            const payload = JSON.stringify({
+                agent_id: agentId,
+                domain: domain,
+                agent_json_url: `https://${domain}/.well-known/agent.json`
+            });
+            
+            outputChannel.appendLine(`[IdentaBar] Sending registration to ${registerEndpoint}...`);
+            
+            const reqUrl = new URL(registerEndpoint);
+            const req = https.request(reqUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Content-Length": Buffer.byteLength(payload)
+                }
+            }, (res: any) => {
+                let data = "";
+                res.on("data", (chunk: any) => data += chunk);
+                res.on("end", () => {
+                    if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                        vscode.window.showInformationMessage(`Successfully registered ${agentId} on Creduent!`);
+                        outputChannel.appendLine(`[Success] Registry response: ${data}`);
+                        runWorkspaceVerification(true);
+                    } else {
+                        vscode.window.showErrorMessage(`Failed to register on Creduent. Registry returned: ${res.statusCode}`);
+                        outputChannel.appendLine(`[Error] Registry response: ${data}`);
+                    }
+                });
+            });
+            
+            req.on("error", (e: any) => {
+                vscode.window.showErrorMessage(`Failed to connect to Creduent registry: ${e.message}`);
+                outputChannel.appendLine(`[Error] ${e.message}`);
+            });
+            
+            req.write(payload);
+            req.end();
+        }
+
     } catch (err: any) {
         vscode.window.showErrorMessage(`Failed to create agent identity: ${err.message}`);
     }
@@ -639,4 +732,100 @@ function findPrivateKey(folders: readonly vscode.WorkspaceFolder[] | undefined):
         }
     }
     return null;
+}
+
+function detectAIAgents(folders: readonly vscode.WorkspaceFolder[]): string[] {
+    const aiIndicators = ["langchain", "crewai", "openai", "anthropic", "smolagents", "autogen", "creduent-client"];
+    const detected = new Set<string>();
+
+    for (const folder of folders) {
+        const rootPath = folder.uri.fsPath;
+        const filesToCheck = [
+            path.join(rootPath, "package.json"),
+            path.join(rootPath, "requirements.txt"),
+            path.join(rootPath, "pyproject.toml")
+        ];
+
+        for (const filePath of filesToCheck) {
+            if (fs.existsSync(filePath)) {
+                try {
+                    const content = fs.readFileSync(filePath, "utf8").toLowerCase();
+                    for (const indicator of aiIndicators) {
+                        if (content.includes(indicator)) {
+                            detected.add(indicator);
+                        }
+                    }
+                } catch (e) {
+                    // Ignore read errors for detection
+                }
+            }
+        }
+    }
+    return Array.from(detected);
+}
+
+class FrameworksProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+    private _onDidChangeTreeData: vscode.EventEmitter<vscode.TreeItem | undefined | null | void> = new vscode.EventEmitter<vscode.TreeItem | undefined | null | void>();
+    readonly onDidChangeTreeData: vscode.Event<vscode.TreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+    private frameworks: string[] = [];
+
+    refresh(frameworks: string[]): void {
+        this.frameworks = frameworks;
+        this._onDidChangeTreeData.fire();
+    }
+
+    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+        return element;
+    }
+
+    getChildren(): Thenable<vscode.TreeItem[]> {
+        if (this.frameworks.length === 0) {
+            return Promise.resolve([new vscode.TreeItem("No AI Frameworks Detected", vscode.TreeItemCollapsibleState.None)]);
+        }
+        return Promise.resolve(this.frameworks.map(f => {
+            const item = new vscode.TreeItem(f, vscode.TreeItemCollapsibleState.None);
+            item.iconPath = new vscode.ThemeIcon("hubot");
+            item.contextValue = "detected-framework";
+            return item;
+        }));
+    }
+}
+
+class RegistriesProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+        return element;
+    }
+    getChildren(): Thenable<vscode.TreeItem[]> {
+        const config = vscode.workspace.getConfiguration("identabar");
+        const registryUrl = config.get<string>("registryUrl", "https://creduent.idevsec.com");
+        
+        const registryItem = new vscode.TreeItem(registryUrl, vscode.TreeItemCollapsibleState.None);
+        registryItem.iconPath = new vscode.ThemeIcon("globe");
+        registryItem.contextValue = "registry-url";
+        
+        return Promise.resolve([registryItem]);
+    }
+}
+
+class HelpProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+    getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+        return element;
+    }
+    getChildren(): Thenable<vscode.TreeItem[]> {
+        const docsItem = new vscode.TreeItem("Documentation", vscode.TreeItemCollapsibleState.None);
+        docsItem.iconPath = new vscode.ThemeIcon("book");
+        docsItem.command = {
+            command: "identabar.openDocs",
+            title: "Read Docs"
+        };
+        
+        const clearCacheItem = new vscode.TreeItem("Clear Cache", vscode.TreeItemCollapsibleState.None);
+        clearCacheItem.iconPath = new vscode.ThemeIcon("trash");
+        clearCacheItem.command = {
+            command: "identabar.clearCache",
+            title: "Clear Cache"
+        };
+        
+        return Promise.resolve([docsItem, clearCacheItem]);
+    }
 }
