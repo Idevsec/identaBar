@@ -51,17 +51,27 @@
      */
     function fetchHttpText(url) {
         if (typeof fetch === "function") {
-            return fetch(url).then(function (res) {
-                if (res.status === 410) {
-                    var err = new Error("HTTP 410 Revoked");
-                    err.status = 410;
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function () {
+                controller.abort();
+            }, 5000);
+            return fetch(url, { signal: controller.signal })
+                .then(function (res) {
+                    clearTimeout(timeoutId);
+                    if (res.status === 410) {
+                        var err = new Error("HTTP 410 Revoked");
+                        err.status = 410;
+                        throw err;
+                    }
+                    if (!res.ok) {
+                        throw new Error("Server returned status code " + res.status);
+                    }
+                    return res.text();
+                })
+                .catch(function (err) {
+                    clearTimeout(timeoutId);
                     throw err;
-                }
-                if (!res.ok) {
-                    throw new Error("Server returned status code " + res.status);
-                }
-                return res.text();
-            });
+                });
         } else {
             var https = require("https");
             return new Promise(function (resolve, reject) {

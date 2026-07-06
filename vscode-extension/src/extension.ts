@@ -646,6 +646,7 @@ async function createAgentIdentity(detectedFramework?: string) {
             const reqUrl = new URL(registerEndpoint);
             const req = https.request(reqUrl, {
                 method: "POST",
+                timeout: 5000,
                 headers: {
                     "Content-Type": "application/json",
                     "Content-Length": Buffer.byteLength(payload)
@@ -663,6 +664,12 @@ async function createAgentIdentity(detectedFramework?: string) {
                         outputChannel.appendLine(`[Error] Registry response: ${data}`);
                     }
                 });
+            });
+            
+            req.on("timeout", () => {
+                req.destroy();
+                vscode.window.showErrorMessage("Failed to register on Creduent: Request timed out.");
+                outputChannel.appendLine("[Error] Connection to Creduent registry timed out.");
             });
             
             req.on("error", (e: any) => {
