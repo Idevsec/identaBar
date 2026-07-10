@@ -631,6 +631,15 @@ async function createAgentIdentity(detectedFramework?: string) {
         );
         
         if (publishAction === "Yes, Publish") {
+            const proceed = await vscode.window.showWarningMessage(
+                `Prerequisites for Registration:\n1. Upload .creduent/agent.json to https://${domain}/.well-known/agent.json\n2. Add a DNS TXT record: _creduent.${domain} => ${agentId}\n\nHave you completed these steps?`,
+                "Yes, Publish Now", "Cancel"
+            );
+            if (proceed !== "Yes, Publish Now") {
+                outputChannel.appendLine("[IdentaBar] Registration cancelled: Prerequisites not met yet.");
+                return;
+            }
+
             const config = vscode.workspace.getConfiguration("identabar");
             const registryUrl = config.get<string>("registryUrl", "https://creduent.idevsec.com");
             const registerEndpoint = `${registryUrl}/registry/register`;

@@ -64,7 +64,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Update button links
         btnRegistry.href = agent.registry_url || "https://creduent.idevsec.com/resolver";
-        btnSchema.href = `https://${agent.domain}/.well-known/agent.json`;
+        if (agent.domain) {
+            btnSchema.href = `https://${agent.domain}/.well-known/agent.json`;
+            btnSchema.style.display = "inline-block";
+        } else {
+            btnSchema.style.display = "none";
+        }
     }
 
     // Get active agent data from background service worker
