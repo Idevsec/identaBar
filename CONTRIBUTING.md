@@ -75,3 +75,23 @@ To keep the repository clean and manageable, please follow our branching convent
 4. Open a Pull Request (PR) against the `main` branch.
 5. Fill out the Pull Request template completely.
 6. Ensure any checks (CI workflows) pass and request review from maintainers.
+
+---
+
+## Project Roadmap & Wanted Features
+
+IdentaBar development follows our unified [Product Roadmap](ROADMAP.md). If you are looking for ways to contribute, here are the active task hotspots across our monorepo components:
+
+### shared/ (Verification Engine)
+* **Offline Mode (Phase 4):** Implement an offline signature check helper that uses a locally cached registry public key when origin registry is unreachable.
+
+### browser-extension/ (Manifest V3 Client)
+* **Store Launches (Phase 2):** Assist in preparing and testing the Manifest V3 builds for Edge and Chrome store submissions.
+* **Trust Breakdown Card (Phase 2):** Update the browser popup UI card to render capability-level trust ratings (e.g. showing green checkmarks for verified scopes).
+* **DID Resolution (Phase 4):** Integrate decentralized identifier (`did:creduent` and `did:web`) parsing into the background service worker.
+
+### vscode-extension/ (IDE Integration Client)
+* **Editor Diagnostics (Phase 3):** Implement inline squiggly error underlines and Problems panel messages for invalid or expired `agent.json` files.
+* **In-IDE Playground (Phase 3):** Help construct a WebView panel allowing local key generation and document signing without registry interaction.
+* **CDT Chain Visualizer (Phase 4):** Render collapsible tree views of Creduent Delegation Token chains in the custom sidebar explorer.
+
