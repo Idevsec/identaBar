@@ -147,7 +147,7 @@
         "watch": "node ../sync-shared.js --copy && tsc -watch -p ./"
     },
     "devDependencies": {
-        "@types/node": "^20.19.43",
+        "@types/node": "^26.1.1",
         "@types/vscode": "^1.74.0",
         "typescript": "^6.0.3"
     }
