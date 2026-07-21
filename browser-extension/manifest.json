@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "IdentaBar",
-    "version": "1.0.0",
+    "version": "1.1.1",
     "description": "Verify AI Agent identities using the Creduent protocol. See trust badges and cryptographic proofs for any website.",
     "browser_specific_settings": {
         "gecko": {

@@ -53,12 +53,12 @@ The browser extension is the **web browsing identity layer** for the Creduent Pr
 ## Phase 4: Delegation, Hardware Trust & Standards - 2027+
 
 **Goal:** Render the full cryptographic proof chain that Creduent Phase 5 introduces visible and auditable directly in the browser.
-**Creduent Alignment:** Protocol Phase 5 (CDT Specification CREDUENT-006, Prompt Integrity CREDUENT-007, TPM Attestation, DID Interoperability, IANA agent:// Registration).
+**Creduent Alignment:** Protocol Phase 5 (CDT Specification CREDUENT-007, Prompt Integrity CREDUENT-006, TPM Attestation, DID Interoperability, IANA agent:// Registration).
 
 - [ ] **CDT Chain Popup View:** Parse and render Creduent Delegation Token (CDT) chains in the popup card - showing the full authorization provenance path (Agent A authorized Agent B to call Service C) in a collapsible, human-readable format.
-- [ ] **Intent-to-Action Audit Badge:** Surface a distinct badge state for agents that publish cryptographically signed intent-to-action execution traces per CREDUENT-006, allowing users to verify at a glance that the agent acted within its declared authorization scope.
+- [ ] **Intent-to-Action Audit Badge:** Surface a distinct badge state for agents that publish cryptographically signed intent-to-action execution traces per CREDUENT-007, allowing users to verify at a glance that the agent acted within its declared authorization scope.
 - [ ] **Hardware-Attested Trust Tier Badge:** Render a distinct `Hardware Verified` toolbar badge when an agent's attestation includes a verified TPM 2.0 quote or Intel SGX/AWS Nitro enclave measurement - visually distinguishing it from software-only attestations.
-- [ ] **Prompt & Model Integrity Indicator (CREDUENT-007):** Display a verification state in the popup for agents that publish cryptographically signed system prompt hashes and model version identifiers.
+- [ ] **Prompt & Model Integrity Indicator (CREDUENT-006):** Display a verification state in the popup for agents that publish cryptographically signed system prompt hashes and model version identifiers.
 - [ ] **DID Resolution Support:** Resolve `did:creduent` and `did:web` decentralized identifiers natively inside the background service worker, supporting verification of agents not registered with the IDevSec reference registry.
 - [ ] **agent:// URI Handler:** Register the browser extension as a native protocol handler for `agent://` URIs once the scheme is formally registered with IANA, enabling direct one-click resolution of any Creduent agent identity from within the browser address bar.
 - [ ] **Offline Verification Mode:** Cache the Creduent registry root public key locally and fall back to purely offline Ed25519 signature validation when the registry is unreachable.

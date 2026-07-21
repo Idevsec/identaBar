@@ -70,11 +70,11 @@ IdentaBar is the official client verification suite for the Creduent Protocol. I
 ## Phase 4: Delegation, Hardware Trust and Governance - 2027+
 
 **Goal:** Visualize and audit the full cryptographic proof chains that Creduent Phase 5 introduces - from delegation tokens to hardware enclave attestations.
-**Creduent Alignment:** Protocol Phase 5 (CDT Specification CREDUENT-006, Instruction and Prompt Integrity CREDUENT-007, Verifiable Audit Logging, TPM Attestation, DID Interoperability, IANA agent:// Registration).
+**Creduent Alignment:** Protocol Phase 5 (CDT Specification CREDUENT-007, Instruction and Prompt Integrity CREDUENT-006, Verifiable Audit Logging, TPM Attestation, DID Interoperability, IANA agent:// Registration).
 
 - [ ] **CDT Chain Visualization:** Parse and render Creduent Delegation Token (CDT) chains in the VS Code Explorer sidebar and browser popup - showing the full authorization provenance path as a collapsible, human-readable audit trail.
-- [ ] **Intent-to-Action Audit View (CREDUENT-006):** Display the cryptographically signed execution trace for agents implementing the CDT binding specification, letting developers and auditors verify that an agent's runtime actions matched its declared authorization scope.
-- [ ] **Prompt and Model Integrity Indicator (CREDUENT-007):** Badge for agents that publish signed system prompt hashes and model version identifiers - flagging mid-session prompt tampering in the VS Code Problems panel and browser popup.
+- [ ] **Intent-to-Action Audit View (CREDUENT-007):** Display the cryptographically signed execution trace for agents implementing the CDT binding specification, letting developers and auditors verify that an agent's runtime actions matched its declared authorization scope.
+- [ ] **Prompt and Model Integrity Indicator (CREDUENT-006):** Badge for agents that publish signed system prompt hashes and model version identifiers - flagging mid-session prompt tampering in the VS Code Problems panel and browser popup.
 - [ ] **Hardware-Attested Trust Tier:** Distinct "Hardware Verified" badge in the VS Code status bar and browser toolbar when an agent's attestation includes a verified TPM 2.0 quote or Intel SGX / AWS Nitro enclave measurement.
 - [ ] **DID Resolution Support:** Resolve `did:creduent` and `did:web` decentralized identifiers natively in both clients, supporting agents not registered with the IDevSec reference registry.
 - [ ] **agent:// URI Handler (Browser):** Register as a native protocol handler for `agent://` URIs once the scheme is formally registered with IANA.

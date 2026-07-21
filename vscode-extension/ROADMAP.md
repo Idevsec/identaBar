@@ -56,11 +56,11 @@ The VS Code extension is the developer workspace identity layer for the Creduent
 ## Phase 4: Delegation, Hardware Trust and Governance - 2027+
 
 **Goal:** Visualize the full cryptographic proof chain that Creduent Phase 5 introduces inside the developer's primary tool.
-**Creduent Alignment:** Protocol Phase 5 (CDT Specification CREDUENT-006, Prompt Integrity CREDUENT-007, TPM Attestation, DID Interoperability).
+**Creduent Alignment:** Protocol Phase 5 (CDT Specification CREDUENT-007, Prompt Integrity CREDUENT-006, TPM Attestation, DID Interoperability).
 
 - [ ] **CDT Chain Visualizer (Sidebar):** Parse and render Creduent Delegation Token (CDT) chains in the Explorer panel - showing the complete authorization provenance path as a verifiable, human-readable audit trail directly in VS Code.
-- [ ] **Intent-to-Action Trace Panel:** For agents implementing CREDUENT-006, display the cryptographically signed execution trace in a dedicated VS Code panel allowing developers and auditors to verify that runtime actions matched the declared authorization scope.
-- [ ] **Prompt and Model Integrity Indicator (CREDUENT-007):** Surface a verification badge for agents that publish cryptographically signed system prompt hashes and model version identifiers, flagging detected mid-session prompt tampering in the Problems panel.
+- [ ] **Intent-to-Action Trace Panel:** For agents implementing CREDUENT-007, display the cryptographically signed execution trace in a dedicated VS Code panel allowing developers and auditors to verify that runtime actions matched the declared authorization scope.
+- [ ] **Prompt and Model Integrity Indicator (CREDUENT-006):** Surface a verification badge for agents that publish cryptographically signed system prompt hashes and model version identifiers, flagging detected mid-session prompt tampering in the Problems panel.
 - [ ] **Hardware-Attested Trust Tier (Status Bar):** Display a distinct `HARDWARE VERIFIED` status bar state when an agent's attestation includes a verified TPM 2.0 quote or Intel SGX / AWS Nitro enclave measurement.
 - [ ] **DID Resolution Support:** Resolve `did:creduent` and `did:web` decentralized identifiers natively inside the workspace scanner, supporting verification of agents not registered with the IDevSec reference registry.
 - [ ] **Offline Verification Mode:** Cache the Creduent registry root public key locally and fall back to purely offline Ed25519 signature validation when the registry is unreachable.
