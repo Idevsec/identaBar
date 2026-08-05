@@ -5,6 +5,11 @@ All notable changes to the IdentaBar project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-08-06
+
+### Added
+- **CREDUENT-006 Action Reversibility Alignment**: Synced extension verification modules with CREDUENT-006 action reversibility rules (OWASP AISVS C9.2.3) and `/ledger/chain/{chain_id}` step-count verification endpoints.
+
 ## [1.1.1] - 2026-07-21
 
 ### Changed
