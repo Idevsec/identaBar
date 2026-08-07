@@ -24,6 +24,8 @@ Run `node sync-shared.js` at the root to sync the module. In local development, 
 
 A Manifest V3 web extension for Google Chrome, Microsoft Edge, Brave, Opera, and Mozilla Firefox (109+).
 
+**Browser Extension Idea Originator:** [Madhura Suryawanshi](https://www.linkedin.com/in/madhura-suryawanshi-9ba285309/)
+
 Automatically scans visited domains for agent identity configurations, resolves attestation records from the registry, and displays real-time trust badges in the browser toolbar. Includes a DevTools verification playground.
 
 Available on: [Mozilla Add-ons](https://addons.mozilla.org/en-US/firefox/addon/identabar/) | Chrome Web Store (pending review) | Microsoft Edge Add-ons (pending review)

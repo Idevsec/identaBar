@@ -2,6 +2,8 @@
 
 IdentaBar is a client-side browser extension (Manifest V3) that verifies the identity and attestation certificates of AI agents using the Creduent protocol standard.
 
+**Browser Extension Idea Originator:** [Madhura Suryawanshi](https://www.linkedin.com/in/madhura-suryawanshi-9ba285309/)
+
 ---
 
 ## Features
