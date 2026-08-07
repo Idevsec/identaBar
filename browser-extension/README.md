@@ -92,6 +92,14 @@ browser-extension/
 
 ---
 
+## Credits & Attribution
+
+- **Browser Extension Idea Originator:** [Madhura Suryawanshi](https://www.linkedin.com/in/madhura-suryawanshi-9ba285309/)
+- **Creator & Lead Developer:** Kashish Kanojia
+- **Stewardship:** IDevSec
+
+---
+
 ## License
 
 Apache 2.0 - See the root `LICENSE` file for terms.

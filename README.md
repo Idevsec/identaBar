@@ -67,6 +67,16 @@ Both clients follow the same zero-dependency cryptographic verification process:
 
 ---
 
+## Authors & Credits
+
+- **Creator & Lead Developer:** Kashish Kanojia
+- **Browser Extension Idea Originator:** [Madhura Suryawanshi](https://www.linkedin.com/in/madhura-suryawanshi-9ba285309/)
+- **Stewardship:** IDevSec
+
+See [AUTHORS.md](./AUTHORS.md) for full project attribution details.
+
+---
+
 ## Licensing
 
 Apache 2.0 - See the [LICENSE](./LICENSE) file for the full legal text.
